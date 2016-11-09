@@ -1,12 +1,12 @@
 package dockertest
 
 import (
-	"fmt"
 	"errors"
+	"fmt"
 
-	"github.com/docker/go-connections/nat"
-	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/container"
+	"github.com/docker/go-connections/nat"
 )
 
 // types.go provides a small set of basic types that are used and returned
@@ -30,7 +30,7 @@ func NewContainer(container *types.Container) *Container {
 
 // HasLabel returns true if the provided label exists and is equal
 // to the provided value.
-func (container *Container) CheckLabel(name string, value string) bool {
+func (container *Container) HasLabel(name string, value string) bool {
 	currentValue, set := container.Labels[name]
 	return set && value == currentValue
 }
@@ -47,7 +47,7 @@ func (container *Container) Port(internal int) (types.Port, error) {
 
 // Ports is when to convey port exposures to RunContainer()
 type Ports struct {
-	specs []string
+	specs      []string
 	publishall bool
 }
 
@@ -62,7 +62,7 @@ func NewPorts() *Ports {
 //    ports.Publish(80, 8080) // Will expose the internal port 80 as 8080
 func (ports *Ports) Publish(internal int, external int) {
 	ports.specs = append(
-		ports.specs, fmt.Sprintf("%d:%d",  internal, external))
+		ports.specs, fmt.Sprintf("%d:%d", internal, external))
 }
 
 // PublishAll is used to toggle the value for HostConfig.PublishAllPorts.
@@ -85,4 +85,3 @@ func (ports *Ports) HostConfig() (*container.HostConfig, error) {
 	}
 	return config, nil
 }
-
