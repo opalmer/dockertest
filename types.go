@@ -2,33 +2,47 @@ package dockertest
 
 import (
 	"fmt"
+	"errors"
+
 	"github.com/docker/go-connections/nat"
 	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types"
 )
 
 // types.go provides a small set of basic types that are used and returned
 // by dockertest.
 
+var (
+	// ErrPortNotFound is returned by Container.Port if we're unable
+	// to find a matching port on the container.
+	ErrPortNotFound = errors.New("")
+)
 
-// Labels are used when creating a container to identify containers that are
-// run by us.
-type Labels struct {
-	labels map[string]string
+// Container wraps the standard types.Container
+type Container struct {
+	types.Container
 }
 
-// NewLabels produces a *Labels
-func NewLables() *Labels {
-	return Labels{labels: map[string]string{}}
+// NewContainer returns a *Container struct.
+func NewContainer(container *types.Container) *Container {
+	return &Container{container}
 }
 
-// Add is used to add a new label
-func (labels *Labels) Add(key string, value string) {
-	labels.labels[key] = value
+// HasLabel returns true if the provided label exists and is equal
+// to the provided value.
+func (container *Container) CheckLabel(name string, value string) bool {
+	currentValue, set := container.Labels[name]
+	return set && value == currentValue
 }
 
-// Remove is used to remove a label
-func (labels *Labels) Remove(key string) {
-	delete(labels.labels, key)
+// Port will return types.Port for the requested internal port.
+func (container *Container) Port(internal int) (types.Port, error) {
+	for _, port := range container.Ports {
+		if port.PrivatePort == uint16(internal) {
+			return port, nil
+		}
+	}
+	return types.Port{}, ErrPortNotFound
 }
 
 // Ports is when to convey port exposures to RunContainer()
@@ -37,7 +51,7 @@ type Ports struct {
 	publishall bool
 }
 
-// NewPorts will produces a new *Ports struct.
+// NewPorts will produces a new *Ports struct
 func NewPorts() *Ports {
 	return &Ports{specs: []string{}, publishall: true}
 }
@@ -70,5 +84,5 @@ func (ports *Ports) HostConfig() (*container.HostConfig, error) {
 		config.PortBindings = bindings
 	}
 	return config, nil
-
 }
+
