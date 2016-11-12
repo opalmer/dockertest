@@ -35,15 +35,17 @@ func NewDockerClient() (*DockerClient, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &DockerClient{Client: docker, log: log.WithField("phase", "client")}, nil
+	return &DockerClient{
+		Client: docker, log: log.WithField("phase", "client")}, nil
 }
 
-// GetContainer retrieves a single container by id.
-func (docker *DockerClient) GetContainer(id string) (*Container, error) {
+// Container retrieves a single container by id and returns a *Container
+// struct.
+func (docker *DockerClient) Container(id string) (*Container, error) {
 	args := filters.NewArgs()
 	args.Add("id", id)
 	options := types.ContainerListOptions{Filters: args}
-	containers, err := client.Client.ContainerList(context.Background(), options)
+	containers, err := docker.Client.ContainerList(context.Background(), options)
 	if err != nil {
 		return nil, err
 	}
@@ -52,16 +54,21 @@ func (docker *DockerClient) GetContainer(id string) (*Container, error) {
 		return nil, ErrContainerNotFound
 	}
 
-	return NewContainer(containers[0])
+	return NewContainer(containers[0]), nil
 }
 
 // Containers is used to return a list of filtered containers matching the given
-// image and label. Note, this will only return running containers.
+// image and label. The following criteria are used to filter the results from
+// Docker.
+//    ancestor=<image>
+//    label=<label>=1
+//    label=dockertest=1
+//    status=running
 func (docker *DockerClient) Containers(image string, label string) ([]*Container, error) {
 	args := filters.NewArgs()
 	args.Add("ancestor", image)
 	args.Add("label", fmt.Sprintf("%s=1", label))
-	args.Add("label", "gerrittest=1")
+	args.Add("label", "dockertest=1")
 	args.Add("status", "running")
 
 	output := []*Container{}
@@ -73,24 +80,34 @@ func (docker *DockerClient) Containers(image string, label string) ([]*Container
 	}
 
 	for _, entry := range containers {
-
+		output = append(output, NewContainer(entry))
 	}
-
+	return output, nil
 }
 
 // RunContainer will run a new container and return the results. By default
-// all ports that are exposed by the container will be published to the host.
+// all ports that are exposed by the container will be published to the host
+// randomly. The published ports will be accessible using functions on the
+// struct:
+//    client, err := NewDockerClient()
+//    container := client.RunContainer("testimage", "testing", nil)
+//    port, err := container.Port(80)
+//    port.External
 func (docker *DockerClient) RunContainer(image string, label string, ports *Ports) (*Container, error) {
+	if ports == nil {
+		ports = NewPorts()
+	}
+
 	hostconfig, err := ports.HostConfig()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	labels := map[string]string{}
 	labels["dockertest"] = "1"
 	labels[label] = "1"
 
-	created, err := client.Client.ContainerCreate(
+	created, err := docker.Client.ContainerCreate(
 		context.Background(), &container.Config{
 			Image: image, Labels: labels},
 		hostconfig, &network.NetworkingConfig{}, "")
@@ -105,5 +122,5 @@ func (docker *DockerClient) RunContainer(image string, label string, ports *Port
 		docker.log.Warn(warning)
 	}
 
-	return docker.GetContainer(created.ID)
+	return docker.Container(created.ID)
 }

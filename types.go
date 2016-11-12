@@ -15,7 +15,7 @@ import (
 var (
 	// ErrPortNotFound is returned by Container.Port if we're unable
 	// to find a matching port on the container.
-	ErrPortNotFound = errors.New("")
+	ErrPortNotFound = errors.New("The requested port could not be found.")
 )
 
 // Container wraps the standard types.Container
@@ -24,7 +24,7 @@ type Container struct {
 }
 
 // NewContainer returns a *Container struct.
-func NewContainer(container *types.Container) *Container {
+func NewContainer(container types.Container) *Container {
 	return &Container{container}
 }
 
@@ -70,8 +70,8 @@ func (ports *Ports) PublishAll(enabled bool) {
 	ports.publishall = enabled
 }
 
-// HostConfig converts the ports provided to Publish() and produces a HostConfig
-// struct that can be used when creating the container.
+// HostConfig converts the struct to a *container.HostConfig which can be used
+// to run containers.
 func (ports *Ports) HostConfig() (*container.HostConfig, error) {
 	config := &container.HostConfig{PublishAllPorts: ports.publishall}
 
@@ -80,7 +80,6 @@ func (ports *Ports) HostConfig() (*container.HostConfig, error) {
 		if err != nil {
 			return nil, err
 		}
-
 		config.PortBindings = bindings
 	}
 	return config, nil
