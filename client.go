@@ -11,8 +11,8 @@ import (
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/client"
-	"io/ioutil"
 	"io"
+	"io/ioutil"
 )
 
 // client.go provides a high level client for interacting with Docker
@@ -123,7 +123,7 @@ creation:
 		created, err = dc.Client.ContainerCreate(
 			context.Background(),
 			&container.Config{
-				Image: image,
+				Image:  image,
 				Labels: labels,
 			},
 			hostconfig, &network.NetworkingConfig{}, "")
@@ -151,7 +151,7 @@ creation:
 
 	logger = logger.WithFields(log.Fields{
 		"action": "start",
-		"id": created.ID,
+		"id":     created.ID,
 	})
 
 	logger.Info()
