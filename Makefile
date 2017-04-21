@@ -1,16 +1,14 @@
-PACKAGES = $(shell go list . | grep -v /vendor/)
-PACKAGE_DIRS = $(shell go list -f '{{ .Dir }}' ./... | egrep -v /vendor/)
+PACKAGES = $(shell go list .)
+PACKAGE_DIRS = $(shell go list -f '{{ .Dir }}' ./...)
 
 check: fmt vet lint test
 
-deps:
+lint:
 	[ -f $(GOPATH)/bin/golint ] || go get github.com/golang/lint/golint
-	[ -f $(GOPATH)/bin/goimports ] || go get golang.org/x/tools/cmd/goimports
-
-lint: deps
 	golint -set_exit_status $(PACKAGES)
 
-fmt: deps
+fmt:
+	[ -f $(GOPATH)/bin/goimports ] || go get golang.org/x/tools/cmd/goimports
 	go fmt $(PACKAGES)
 	goimports -w $(PACKAGE_DIRS)
 
