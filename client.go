@@ -118,10 +118,10 @@ func (docker *DockerClient) RunContainer(image string, label string, ports *Port
 		if client.IsErrNotFound(err) {
 			docker.log.Info("Pulling down missing image")
 			reader, err := docker.Client.ImagePull(context.Background(), image, types.ImagePullOptions{})
-			io.Copy(ioutil.Discard, reader)
 			if err != nil {
 				return nil, err
 			}
+			io.Copy(ioutil.Discard, reader)
 		}
 		return nil, err
 	}
