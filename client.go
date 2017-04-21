@@ -111,6 +111,9 @@ func (docker *DockerClient) RunContainer(image string, label string, ports *Port
 		context.Background(), &container.Config{
 			Image: image, Labels: labels},
 		hostconfig, &network.NetworkingConfig{}, "")
+	if err != nil {
+		return nil, err
+	}
 
 	err = docker.Client.ContainerStart(
 		context.Background(), created.ID, types.ContainerStartOptions{})
