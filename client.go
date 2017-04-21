@@ -6,7 +6,7 @@ import (
 	"io"
 	"io/ioutil"
 
-	log "github.com/Sirupsen/logrus"
+	"github.com/crewjam/errset"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
@@ -20,13 +20,12 @@ var (
 	// ErrContainerNotFound is returned by GetContainer if we were
 	// unable to find the requested c.
 	ErrContainerNotFound = errors.New(
-		"Expected to find exactly one c for the given query.")
+		"expected to find exactly one c for the given query")
 )
 
 // DockerClient provides a wrapper for the standard dc client
 type DockerClient struct {
 	Client *client.Client
-	log    *log.Entry
 }
 
 // NewDockerClient produces a new *DockerClient that can be used to interact
@@ -36,13 +35,12 @@ func NewDockerClient() (*DockerClient, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &DockerClient{
-		Client: docker, log: log.WithField("phase", "client")}, nil
+	return &DockerClient{Client: docker}, nil
 }
 
 // ContainerInfo retrieves a single c by id and returns a *ContainerInfo
 // struct.
-func (dc *DockerClient) Container(ctx context.Context, id string) (*ContainerInfo, error) {
+func (dc *DockerClient) ContainerInfo(ctx context.Context, id string) (*ContainerInfo, error) {
 	args := filters.NewArgs()
 	args.Add("id", id)
 	options := types.ContainerListOptions{Filters: args}
@@ -63,7 +61,9 @@ func (dc *DockerClient) Container(ctx context.Context, id string) (*ContainerInf
 	return NewContainerInfo(containers[0], inspection), nil
 }
 
-func (dc *DockerClient) filter(ctx context.Context, cancel context.CancelFunc, input *ClientInput, containers chan *ContainerInfo) {
+// ListContainers will return a list of *ContainerInfo structs based on the
+// provided input.
+func (dc *DockerClient) ListContainers(ctx context.Context, input *ClientInput) ([]*ContainerInfo, error) {
 	options := types.ContainerListOptions{
 		All:     input.All,
 		Since:   input.Since,
@@ -71,23 +71,40 @@ func (dc *DockerClient) filter(ctx context.Context, cancel context.CancelFunc, i
 		Filters: input.FilterArgs(),
 	}
 
-	found, err := dc.Client.ContainerList(ctx, options)
+	containers, err := dc.Client.ContainerList(ctx, options)
 	if err != nil {
-		return
+		return nil, err
 	}
 
-	for _, entry := range found {
-		//entry.ID
-	}
-}
+	limiter := make(chan bool, 6)
+	infos := make(chan *ContainerInfo)
+	errs := make(chan error)
 
-// FilterContainers will iterate over all containers using the provided
-// input and emit the results to a channel.
-func (dc *DockerClient) FilterContainers(ctx context.Context, input *ClientInput) chan *ContainerInfo {
-	ctx, cancel := context.WithCancel(ctx)
-	containers := make(chan *ContainerInfo, 1)
-	go dc.filter(ctx, cancel, input, containers)
-	return containers, errs
+	for _, entry := range containers {
+		limiter <- true
+		go func(c types.Container) {
+			defer func() { <-limiter }()
+			info, err := dc.ContainerInfo(ctx, c.ID)
+			if err != nil {
+				errs <- err
+				return
+			}
+			infos <- info
+		}(entry)
+	}
+
+	results := []*ContainerInfo{}
+	errout := errset.ErrSet{}
+	for i := 0; i < len(containers); i++ {
+		select {
+		case err := <-errs:
+			errout = append(errout, err)
+		case info := <-infos:
+			results = append(results, info)
+		}
+	}
+
+	return results, errout.ReturnValue()
 }
 
 // RunContainer will run a new c and return the results. By default
@@ -99,10 +116,6 @@ func (dc *DockerClient) FilterContainers(ctx context.Context, input *ClientInput
 //    port, err := c.Port(80)
 //    port.External
 func (dc *DockerClient) RunContainer(ctx context.Context, input *ClientInput) (*ContainerInfo, error) {
-	logger := dc.log.WithFields(log.Fields{
-		"image": input.Image,
-	})
-
 	hostconfig, err := input.Ports.HostConfig()
 	if err != nil {
 		return nil, err
@@ -111,25 +124,18 @@ func (dc *DockerClient) RunContainer(ctx context.Context, input *ClientInput) (*
 	var created container.ContainerCreateCreatedBody
 creation:
 	for {
-		logger = logger.WithField("action", "create")
 		created, err = dc.Client.ContainerCreate(
 			ctx,
 			input.ContainerConfig(),
 			hostconfig, &network.NetworkingConfig{}, "")
 		switch {
 		case client.IsErrNotFound(err):
-			logger = logger.WithFields(log.Fields{
-				"action": "pull-image",
-			})
-			logger.Info()
 			reader, err := dc.Client.ImagePull(context.Background(), input.Image, types.ImagePullOptions{})
 			if err != nil {
-				logger.WithError(err).Error()
 				return nil, err
 			}
 			io.Copy(ioutil.Discard, reader)
 		case err != nil:
-			logger.WithError(err).Error()
 			return nil, err
 		case err == nil:
 			break creation
@@ -137,20 +143,12 @@ creation:
 
 	}
 
-	logger = logger.WithFields(log.Fields{
-		"action": "start",
-		"id":     created.ID,
-	})
-
-	logger.Info()
 	err = dc.Client.ContainerStart(ctx, created.ID, types.ContainerStartOptions{})
 	if err != nil {
 		return nil, err
 	}
 
-	for _, warning := range created.Warnings {
-		logger.Warn(warning)
-	}
-
-	return dc.Container(ctx, created.ID)
+	info, err := dc.ContainerInfo(ctx, created.ID)
+	info.Warnings = created.Warnings
+	return info, err
 }

@@ -10,16 +10,16 @@ import (
 var (
 	// ErrPortNotFound is returned by ContainerInfo.Port if we're unable
 	// to find a matching port on the c.
-	ErrPortNotFound = errors.New("The requested port could not be found.")
+	ErrPortNotFound = errors.New("The requested port could not be found")
 )
 
 // ContainerInfo provides a wrapper around information
 type ContainerInfo struct {
-	JSON types.ContainerJSON
-	Data   types.Container
-	State *types.ContainerState
+	JSON     types.ContainerJSON
+	Data     types.Container
+	State    *types.ContainerState
+	Warnings []string
 }
-
 
 func (c *ContainerInfo) String() string {
 	return fmt.Sprintf("ContainerInfo(image='%s', id='%s')", c.Data.Image, c.Data.ID)
@@ -44,5 +44,8 @@ func (c *ContainerInfo) Port(internal int) (types.Port, error) {
 
 // NewContainerInfo returns a *ContainerInfo struct.
 func NewContainerInfo(container types.Container, json types.ContainerJSON) *ContainerInfo {
-	return &ContainerInfo{Data: container, State: json.State, JSON: json}
+	return &ContainerInfo{
+		Data: container, State: json.State, JSON: json,
+		Warnings: []string{},
+	}
 }
