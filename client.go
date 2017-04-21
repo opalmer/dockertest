@@ -24,7 +24,7 @@ var (
 		"Expected to find exactly one container for the given query.")
 )
 
-// DockerClient provides a wrapper for the standard docker client
+// DockerClient provides a wrapper for the standard dc client
 type DockerClient struct {
 	Client *client.Client
 	log    *log.Entry
@@ -43,11 +43,11 @@ func NewDockerClient() (*DockerClient, error) {
 
 // Container retrieves a single container by id and returns a *Container
 // struct.
-func (docker *DockerClient) Container(id string) (*Container, error) {
+func (dc *DockerClient) Container(id string) (*Container, error) {
 	args := filters.NewArgs()
 	args.Add("id", id)
 	options := types.ContainerListOptions{Filters: args}
-	containers, err := docker.Client.ContainerList(context.Background(), options)
+	containers, err := dc.Client.ContainerList(context.Background(), options)
 	if err != nil {
 		return nil, err
 	}
@@ -66,7 +66,7 @@ func (docker *DockerClient) Container(id string) (*Container, error) {
 //    label=<label>=1
 //    label=dockertest=1
 //    status=running
-func (docker *DockerClient) Containers(image string, label string) ([]*Container, error) {
+func (dc *DockerClient) Containers(image string, label string) ([]*Container, error) {
 	args := filters.NewArgs()
 	args.Add("ancestor", image)
 	args.Add("label", fmt.Sprintf("%s=1", label))
@@ -76,7 +76,7 @@ func (docker *DockerClient) Containers(image string, label string) ([]*Container
 	output := []*Container{}
 
 	options := types.ContainerListOptions{Filters: args}
-	containers, err := docker.Client.ContainerList(context.Background(), options)
+	containers, err := dc.Client.ContainerList(context.Background(), options)
 	if err != nil {
 		return output, err
 	}
@@ -95,7 +95,12 @@ func (docker *DockerClient) Containers(image string, label string) ([]*Container
 //    container := client.RunContainer("testimage", "testing", nil)
 //    port, err := container.Port(80)
 //    port.External
-func (docker *DockerClient) RunContainer(image string, label string, ports *Ports) (*Container, error) {
+func (dc *DockerClient) RunContainer(image string, label string, ports *Ports) (*Container, error) {
+	logger := dc.log.WithFields(log.Fields{
+		"image": image,
+		"label": label,
+	})
+
 	if ports == nil {
 		ports = NewPorts()
 	}
@@ -107,34 +112,58 @@ func (docker *DockerClient) RunContainer(image string, label string, ports *Port
 
 	labels := map[string]string{}
 	labels["dockertest"] = "1"
-	labels[label] = "1"
+	if label != "" {
+		labels[label] = "1"
+	}
 
-	created, err := docker.Client.ContainerCreate(
-		context.Background(), &container.Config{
-			Image: image, Labels: labels},
-		hostconfig, &network.NetworkingConfig{}, "")
-
-	if err != nil {
-		if client.IsErrNotFound(err) {
-			docker.log.Info("Pulling down missing image")
-			reader, err := docker.Client.ImagePull(context.Background(), image, types.ImagePullOptions{})
+	var created container.ContainerCreateCreatedBody
+creation:
+	for {
+		logger = logger.WithField("action", "create")
+		created, err = dc.Client.ContainerCreate(
+			context.Background(),
+			&container.Config{
+				Image: image,
+				Labels: labels,
+			},
+			hostconfig, &network.NetworkingConfig{}, "")
+		switch {
+		case client.IsErrNotFound(err):
+			logger = logger.WithFields(log.Fields{
+				"action": "pull-image",
+			})
+			logger.Info()
+			reader, err := dc.Client.ImagePull(context.Background(), image, types.ImagePullOptions{})
 			if err != nil {
+				logger.WithError(err).Error()
 				return nil, err
 			}
 			io.Copy(ioutil.Discard, reader)
+		case err != nil:
+			logger.Info("hedrerer")
+			logger.WithError(err).Error()
+			return nil, err
+		case err == nil:
+			break creation
 		}
-		return nil, err
+
 	}
 
-	err = docker.Client.ContainerStart(
+	logger = logger.WithFields(log.Fields{
+		"action": "start",
+		"id": created.ID,
+	})
+
+	logger.Info()
+	err = dc.Client.ContainerStart(
 		context.Background(), created.ID, types.ContainerStartOptions{})
 	if err != nil {
 		return nil, err
 	}
 
 	for _, warning := range created.Warnings {
-		docker.log.Warn(warning)
+		logger.Warn(warning)
 	}
 
-	return docker.Container(created.ID)
+	return dc.Container(created.ID)
 }
