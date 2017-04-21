@@ -11,6 +11,8 @@ import (
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/client"
+	"io/ioutil"
+	"io"
 )
 
 // client.go provides a high level client for interacting with Docker
@@ -111,7 +113,16 @@ func (docker *DockerClient) RunContainer(image string, label string, ports *Port
 		context.Background(), &container.Config{
 			Image: image, Labels: labels},
 		hostconfig, &network.NetworkingConfig{}, "")
+
 	if err != nil {
+		if client.IsErrNotFound(err) {
+			docker.log.Info("Pulling down missing image")
+			reader, err := docker.Client.ImagePull(context.Background(), image, types.ImagePullOptions{})
+			io.Copy(ioutil.Discard, reader)
+			if err != nil {
+				return nil, err
+			}
+		}
 		return nil, err
 	}
 
