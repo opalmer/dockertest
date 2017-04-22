@@ -263,6 +263,12 @@
 			"path": "golang.org/x/sys/windows",
 			"revision": "ea9bcade75cb975a0b9738936568ab388b845617",
 			"revisionTime": "2017-03-08T18:50:27Z"
+		},
+		{
+			"checksumSHA1": "CEFTYXtWmgSh+3Ik1NmDaJcz4E0=",
+			"path": "gopkg.in/check.v1",
+			"revision": "20d25e2804050c1cd24a7eea1e7a6447dd0e74ec",
+			"revisionTime": "2016-12-08T18:13:25Z"
 		}
 	],
 	"rootPath": "github.com/opalmer/dockertest"
