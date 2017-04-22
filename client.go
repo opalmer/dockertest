@@ -58,7 +58,11 @@ func (dc *DockerClient) ContainerInfo(ctx context.Context, id string) (*Containe
 		return nil, err
 	}
 
-	return NewContainerInfo(containers[0], inspection), nil
+	return &ContainerInfo{
+		Data:  containers[0],
+		State: inspection.State, JSON: inspection,
+		Warnings: []string{},
+	}, nil
 }
 
 // ListContainers will return a list of *ContainerInfo structs based on the
