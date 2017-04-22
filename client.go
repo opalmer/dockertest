@@ -5,6 +5,7 @@ import (
 	"errors"
 	"io"
 	"io/ioutil"
+	"strings"
 
 	"github.com/crewjam/errset"
 	"github.com/docker/docker/api/types"
@@ -28,9 +29,9 @@ type DockerClient struct {
 	Client *client.Client
 }
 
-// NewDockerClient produces a new *DockerClient that can be used to interact
+// NewClient produces a new *DockerClient that can be used to interact
 // with Docker.
-func NewDockerClient() (*DockerClient, error) {
+func NewClient() (*DockerClient, error) {
 	docker, err := client.NewEnvClient()
 	if err != nil {
 		return nil, err
@@ -80,14 +81,11 @@ func (dc *DockerClient) ListContainers(ctx context.Context, input *ClientInput) 
 		return nil, err
 	}
 
-	limiter := make(chan bool, 6)
 	infos := make(chan *ContainerInfo)
 	errs := make(chan error)
 
 	for _, entry := range containers {
-		limiter <- true
 		go func(c types.Container) {
-			defer func() { <-limiter }()
 			info, err := dc.ContainerInfo(ctx, c.ID)
 			if err != nil {
 				errs <- err
@@ -111,11 +109,23 @@ func (dc *DockerClient) ListContainers(ctx context.Context, input *ClientInput) 
 	return results, errout.ReturnValue()
 }
 
+// RemoveContainer will delete the requested container, force terminating
+// it if necessary.
+func (dc *DockerClient) RemoveContainer(ctx context.Context, id string) error {
+	err := dc.Client.ContainerRemove(ctx, id, types.ContainerRemoveOptions{Force: true})
+
+	// client.IsErrNotFound is a bit flaky it seems
+	if err != nil && strings.Contains(err.Error(), "No such container") {
+		err = nil
+	}
+	return err
+}
+
 // RunContainer will run a new c and return the results. By default
 // all ports that are exposed by the c will be published to the host
 // randomly. The published ports will be accessible using functions on the
 // struct:
-//    client, err := NewDockerClient()
+//    client, err := NewClient()
 //    c := client.RunContainer("testimage", "testing", nil)
 //    port, err := c.Port(80)
 //    port.External

@@ -22,14 +22,21 @@ type ContainerInfo struct {
 }
 
 func (c *ContainerInfo) String() string {
-	return fmt.Sprintf("ContainerInfo(image='%s', id='%s')", c.Data.Image, c.Data.ID)
+	return fmt.Sprintf("{image:%s, id:%s, status:%s}", c.Data.Image, c.Data.ID, c.Data.Status)
+}
+
+// GetLabel will return the value of the given label or "" if it does
+// not exist. The boolean indicates if the label exists at all.
+func (c *ContainerInfo) GetLabel(name string) (string, bool) {
+	value, set := c.Data.Labels[name]
+	return value, set
 }
 
 // HasLabel returns true if the provided label exists and is equal
 // to the provided value.
 func (c *ContainerInfo) HasLabel(name string, value string) bool {
-	currentValue, set := c.Data.Labels[name]
-	return set && value == currentValue
+	current, set := c.GetLabel(name)
+	return set && value == current
 }
 
 // Port will return types.Port for the requested internal port.
@@ -40,12 +47,4 @@ func (c *ContainerInfo) Port(internal int) (types.Port, error) {
 		}
 	}
 	return types.Port{}, ErrPortNotFound
-}
-
-// NewContainerInfo returns a *ContainerInfo struct.
-func NewContainerInfo(container types.Container, json types.ContainerJSON) *ContainerInfo {
-	return &ContainerInfo{
-		Data: container, State: json.State, JSON: json,
-		Warnings: []string{},
-	}
 }
