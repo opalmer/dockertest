@@ -9,6 +9,7 @@ deps:
 	rm -rf vendor/github.com/docker/docker/vendor
 
 lint: deps
+	go get github.com/kardianos/govendor
 	golint -set_exit_status $(PACKAGES)
 
 fmt: deps
