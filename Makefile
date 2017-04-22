@@ -4,12 +4,12 @@ PACKAGE_DIRS = $(shell go list -f '{{ .Dir }}' ./... | grep -v /vendor/)
 check: deps vet lint test
 
 deps:
+	go get github.com/kardianos/govendor
 	govendor sync
 	rm -rf $(GOPATH)/src/github.com/docker/docker/vendor
 	rm -rf vendor/github.com/docker/docker/vendor
 
 lint: deps
-	go get github.com/kardianos/govendor
 	golint -set_exit_status $(PACKAGES)
 
 fmt: deps
