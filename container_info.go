@@ -23,8 +23,6 @@ var (
 	// ErrContainerStillRunning is returned by Finished() if the container
 	// is still running.
 	ErrContainerStillRunning = errors.New("container still running")
-
-	since = time.Since
 )
 
 // ContainerInfo provides a wrapper around information
@@ -109,7 +107,7 @@ func (c *ContainerInfo) Elapsed() (time.Duration, error) {
 	finished, err := c.Finished()
 	if err != nil {
 		if err == ErrContainerStillRunning {
-			return since(started), nil
+			return time.Since(started), nil
 		}
 		return time.Second * 0, nil
 	}

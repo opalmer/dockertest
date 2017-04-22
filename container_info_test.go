@@ -62,7 +62,7 @@ func (s *ContainerInfoTest) TestID(c *C) {
 func (s *ContainerInfoTest) TestStarted(c *C) {
 	info := &ContainerInfo{
 		State: &types.ContainerState{
-			StartedAt: "0001-01-01T00:00:00Z",
+			StartedAt: timeNotSet,
 		},
 	}
 	_, err := info.Started()
@@ -71,19 +71,18 @@ func (s *ContainerInfoTest) TestStarted(c *C) {
 	now := time.Now()
 	info = &ContainerInfo{
 		State: &types.ContainerState{
-			Running:   true,
 			StartedAt: now.Format(time.RFC3339Nano),
 		},
 	}
 	value, err := info.Started()
 	c.Assert(err, IsNil)
-	c.Assert(value, Equals, now)
+	c.Assert(value.UnixNano(), Equals, now.UnixNano())
 }
 
 func (s *ContainerInfoTest) TestFinished(c *C) {
 	info := &ContainerInfo{
 		State: &types.ContainerState{
-			FinishedAt: "0001-01-01T00:00:00Z",
+			FinishedAt: timeNotSet,
 		},
 	}
 	_, err := info.Finished()
@@ -97,7 +96,7 @@ func (s *ContainerInfoTest) TestFinished(c *C) {
 	}
 	value, err := info.Finished()
 	c.Assert(err, IsNil)
-	c.Assert(value, Equals, now)
+	c.Assert(value.UnixNano(), Equals, now.UnixNano())
 }
 
 func (s *ContainerInfoTest) TestElapsed(c *C) {
@@ -117,18 +116,12 @@ func (s *ContainerInfoTest) TestElapsed(c *C) {
 				FinishedAt: toValue(time.Date(2017, time.January, 1, 1, 0, 0, 0, time.UTC)),
 			},
 		}: time.Hour * 1,
-		//&ContainerInfo{
-		//	State: &types.ContainerState{
-		//		StartedAt: toValue(time.Date(2017, time.January, 1, 0, 0, 0, 0, time.UTC)),
-		//		FinishedAt: timeNotSet,
-		//	},
-		//}: time.Hour * 1,
 	}
 
 	for info, expected := range expectations {
 		value, err := info.Elapsed()
 		c.Assert(err, IsNil)
-		c.Assert(value, Equals, expected)
+		c.Assert(value.Nanoseconds(), Equals, expected.Nanoseconds())
 	}
 
 }
