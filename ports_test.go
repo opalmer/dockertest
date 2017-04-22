@@ -33,4 +33,7 @@ func (s *TestPorts) TestHostConfig(c *C) {
 	c.Assert(
 		hostconfig.PortBindings, DeepEquals,
 		nat.PortMap{"8080/tcp": []nat.PortBinding{{HostIP: "", HostPort: "80"}}})
+	ports.specs = append(ports.specs, "ff:ff")
+	_, err = ports.HostConfig()
+	c.Assert(err, ErrorMatches, "Invalid containerPort: ff")
 }
