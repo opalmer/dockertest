@@ -15,6 +15,12 @@
 			"revisionTime": "2017-03-17T14:32:14Z"
 		},
 		{
+			"checksumSHA1": "uER+H+ibactPLiEf8TCHbQNRANw=",
+			"path": "github.com/crewjam/errset",
+			"revision": "f78d65de925cf59a953184a376cbfe07cfe65e3d",
+			"revisionTime": "2016-02-19T15:37:00Z"
+		},
+		{
 			"checksumSHA1": "Gj+xR1VgFKKmFXYOJMnAczC3Znk=",
 			"path": "github.com/docker/distribution/digestset",
 			"revision": "c3e06c6069653bf72034ed907d6749d3928fdacb",
