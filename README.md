@@ -4,9 +4,9 @@
 [![codecov](https://codecov.io/gh/opalmer/dockertest/branch/master/graph/badge.svg)](https://codecov.io/gh/opalmer/dockertest)
 
 
-
 This project provides a small set of wrappers around docker. It is intended
-to be used to ease testing.
+to be used to ease testing. Documentation is available via godoc: 
+    https://godoc.org/github.com/opalmer/dockertest
 
 # Example
 
