@@ -20,8 +20,7 @@ import (
 var (
 	// ErrContainerNotFound is returned by GetContainer if we were
 	// unable to find the requested c.
-	ErrContainerNotFound = errors.New(
-		"expected to find exactly one c for the given query")
+	ErrContainerNotFound = errors.New("failed to locate the container")
 )
 
 // DockerClient provides a wrapper for the standard dc client
@@ -44,7 +43,7 @@ func NewClient() (*DockerClient, error) {
 func (dc *DockerClient) ContainerInfo(ctx context.Context, id string) (*ContainerInfo, error) {
 	args := filters.NewArgs()
 	args.Add("id", id)
-	options := types.ContainerListOptions{Filters: args}
+	options := types.ContainerListOptions{Filters: args, All: true}
 	containers, err := dc.Client.ContainerList(ctx, options)
 	if err != nil {
 		return nil, err
@@ -63,6 +62,7 @@ func (dc *DockerClient) ContainerInfo(ctx context.Context, id string) (*Containe
 		Data:  containers[0],
 		State: inspection.State, JSON: inspection,
 		Warnings: []string{},
+		client:   dc,
 	}, nil
 }
 
