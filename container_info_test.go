@@ -1,6 +1,8 @@
 package dockertest
 
 import (
+	"time"
+
 	"github.com/docker/docker/api/types"
 	. "gopkg.in/check.v1"
 )
@@ -46,4 +48,87 @@ func (s *ContainerInfoTest) TestPort(c *C) {
 	c.Assert(port.PublicPort, Equals, uint16(2))
 	_, err = info.Port(12)
 	c.Assert(err, ErrorMatches, ErrPortNotFound.Error())
+}
+
+func (s *ContainerInfoTest) TestID(c *C) {
+	info := &ContainerInfo{
+		Data: types.Container{
+			ID: "foobar",
+		},
+	}
+	c.Assert(info.ID(), Equals, "foobar")
+}
+
+func (s *ContainerInfoTest) TestStarted(c *C) {
+	info := &ContainerInfo{
+		State: &types.ContainerState{
+			StartedAt: "0001-01-01T00:00:00Z",
+		},
+	}
+	_, err := info.Started()
+	c.Assert(err, ErrorMatches, ErrContainerNotRunning.Error())
+
+	now := time.Now()
+	info = &ContainerInfo{
+		State: &types.ContainerState{
+			Running:   true,
+			StartedAt: now.Format(time.RFC3339Nano),
+		},
+	}
+	value, err := info.Started()
+	c.Assert(err, IsNil)
+	c.Assert(value, Equals, now)
+}
+
+func (s *ContainerInfoTest) TestFinished(c *C) {
+	info := &ContainerInfo{
+		State: &types.ContainerState{
+			FinishedAt: "0001-01-01T00:00:00Z",
+		},
+	}
+	_, err := info.Finished()
+	c.Assert(err, ErrorMatches, ErrContainerStillRunning.Error())
+
+	now := time.Now()
+	info = &ContainerInfo{
+		State: &types.ContainerState{
+			FinishedAt: now.Format(time.RFC3339Nano),
+		},
+	}
+	value, err := info.Finished()
+	c.Assert(err, IsNil)
+	c.Assert(value, Equals, now)
+}
+
+func (s *ContainerInfoTest) TestElapsed(c *C) {
+	toValue := func(t time.Time) string {
+		return t.Format(time.RFC3339Nano)
+	}
+	expectations := map[*ContainerInfo]time.Duration{
+		&ContainerInfo{
+			State: &types.ContainerState{
+				StartedAt:  timeNotSet,
+				FinishedAt: timeNotSet,
+			},
+		}: time.Second * 0,
+		&ContainerInfo{
+			State: &types.ContainerState{
+				StartedAt:  toValue(time.Date(2017, time.January, 1, 0, 0, 0, 0, time.UTC)),
+				FinishedAt: toValue(time.Date(2017, time.January, 1, 1, 0, 0, 0, time.UTC)),
+			},
+		}: time.Hour * 1,
+		//&ContainerInfo{
+		//	State: &types.ContainerState{
+		//		StartedAt: toValue(time.Date(2017, time.January, 1, 0, 0, 0, 0, time.UTC)),
+		//		FinishedAt: timeNotSet,
+		//	},
+		//}: time.Hour * 1,
+	}
+
+	for info, expected := range expectations {
+		value, err := info.Elapsed()
+		c.Assert(err, IsNil)
+		c.Assert(value, Equals, expected)
+	}
+
 }

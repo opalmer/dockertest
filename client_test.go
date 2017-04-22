@@ -35,6 +35,7 @@ func (s *ClientTest) TestRunAndRemoveContainer(c *C) {
 	input := NewClientInput("rabbitmq:3")
 
 	info, err := dc.RunContainer(context.Background(), input)
+	c.Assert(info.Refresh(), IsNil)
 	c.Assert(err, IsNil)
 	defer dc.RemoveContainer(context.Background(), info.Data.ID)
 }
