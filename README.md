@@ -1,7 +1,8 @@
 # Docker Test
 
 [![Build Status](https://travis-ci.org/opalmer/dockertest.svg?branch=master)](https://travis-ci.org/opalmer/dockertest)
-[![codecov](https://codecov.io/gh/opalmer/dockerutil/branch/master/graph/badge.svg)](https://codecov.io/gh/opalmer/dockerutil)
+[![codecov](https://codecov.io/gh/opalmer/dockertest/branch/master/graph/badge.svg)](https://codecov.io/gh/opalmer/dockertest)
+
 
 
 This project provides a small set of wrappers around docker. It is intended
