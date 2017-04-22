@@ -1,23 +1,10 @@
-PACKAGES = $(shell go list .)
-PACKAGE_DIRS = $(shell go list -f '{{ .Dir }}' ./...)
-
-DEPENDENCIES = \
-    gopkg.in/check.v1 \
-    golang.org/x/tools/cmd/goimports \
-    github.com/golang/lint/golint \
-    github.com/crewjam/errset \
-    github.com/docker/docker/api/types \
-    github.com/docker/docker/api/types/container \
-    github.com/docker/docker/api/types/filters \
-    github.com/docker/docker/api/types/network \
-    github.com/docker/docker/client \
-    github.com/docker/docker/api/types/container \
-    github.com/docker/go-connections/nat
+PACKAGES = $(shell go list . | grep -v /vendor/)
+PACKAGE_DIRS = $(shell go list -f '{{ .Dir }}' ./... | grep -v /vendor/)
 
 check: deps vet lint test
 
 deps:
-	go get $(DEPENDENCIES)
+	govendor sync
 	rm -rf $(GOPATH)/src/github.com/docker/docker/vendor
 
 lint: deps
