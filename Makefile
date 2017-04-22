@@ -1,10 +1,13 @@
 PACKAGES = $(shell go list . | grep -v /vendor/)
 PACKAGE_DIRS = $(shell go list -f '{{ .Dir }}' ./... | grep -v /vendor/)
+EXTRA_DEPENDENCIES = \
+    github.com/kardianos/govendor \
+    github.com/golang/lint/golint
 
 check: deps vet lint test
 
 deps:
-	go get github.com/kardianos/govendor
+	go get $(EXTRA_DEPENDENCIES)
 	govendor sync
 	rm -rf $(GOPATH)/src/github.com/docker/docker/vendor
 	rm -rf vendor/github.com/docker/docker/vendor
