@@ -2,7 +2,6 @@ package dockertest
 
 import (
 	"fmt"
-
 	"time"
 
 	"github.com/docker/docker/api/types/container"
