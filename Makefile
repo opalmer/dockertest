@@ -6,6 +6,7 @@ check: deps vet lint test
 deps:
 	govendor sync
 	rm -rf $(GOPATH)/src/github.com/docker/docker/vendor
+	rm -rf vendor/github.com/docker/docker/vendor
 
 lint: deps
 	golint -set_exit_status $(PACKAGES)
