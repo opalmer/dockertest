@@ -1,7 +1,7 @@
 PACKAGES = $(shell go list .)
 PACKAGE_DIRS = $(shell go list -f '{{ .Dir }}' ./...)
 
-check: fmt vet lint test
+check: vet lint test
 
 lint:
 	[ -f $(GOPATH)/bin/golint ] || go get github.com/golang/lint/golint
