@@ -4,6 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/url"
+	"os"
+	"strings"
 	"time"
 
 	"github.com/docker/docker/api/types"
@@ -70,6 +73,25 @@ func (c *ContainerInfo) Port(internal int) (types.Port, error) {
 		}
 	}
 	return types.Port{}, ErrPortNotFound
+}
+
+// Address will return the most likely address for the given port. This is a
+// best guess effort.
+func (c *ContainerInfo) Address(port types.Port) string {
+	// If there's a url defined then we'll use that
+	// since it's the most likely to work in various
+	// scenarios (docker-machine, local docker and remote docker service)
+	parsed, err := url.Parse(os.Getenv("DOCKER_URL"))
+	if err == nil {
+		host := strings.Split(parsed.Host, ":")
+		if host[0] != "" {
+			return host[0]
+		}
+	}
+	if port.IP == "0.0.0.0" {
+		return "127.0.0.1"
+	}
+	return port.IP
 }
 
 // ID is a shortcut function to return the container's id

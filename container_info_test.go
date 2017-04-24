@@ -1,6 +1,7 @@
 package dockertest
 
 import (
+	"os"
 	"time"
 
 	"github.com/docker/docker/api/types"
@@ -123,5 +124,22 @@ func (s *ContainerInfoTest) TestElapsed(c *C) {
 		c.Assert(err, IsNil)
 		c.Assert(value.Nanoseconds(), Equals, expected.Nanoseconds())
 	}
+}
 
+func (s *ContainerInfoTest) TestAddress(c *C) {
+	old, set := os.LookupEnv("DOCKER_URL")
+	if set {
+		defer os.Setenv("DOCKER_URL", old)
+	} else {
+		defer os.Unsetenv("DOCKER_URL")
+	}
+
+	info := &ContainerInfo{}
+	os.Setenv("DOCKER_URL", "foo://hostname:5555/bar?true=1")
+	c.Assert(info.Address(types.Port{}), Equals, "hostname")
+	os.Setenv("DOCKER_URL", "foo://hostname")
+	c.Assert(info.Address(types.Port{}), Equals, "hostname")
+	os.Unsetenv("DOCKER_URL")
+	c.Assert(info.Address(types.Port{IP: "1.2.3.4"}), Equals, "1.2.3.4")
+	c.Assert(info.Address(types.Port{IP: "0.0.0.0"}), Equals, "127.0.0.1")
 }
