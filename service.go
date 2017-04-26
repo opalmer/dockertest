@@ -81,6 +81,7 @@ func NewService(parent context.Context, image string) (*Service, error) {
 	ctx, cancel := context.WithCancel(parent)
 	client, err := NewClient()
 	if err != nil {
+		cancel()
 		return nil, err
 	}
 	return &Service{
