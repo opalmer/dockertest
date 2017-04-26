@@ -3,46 +3,101 @@ package dockertest
 import (
 	"fmt"
 
-	"github.com/docker/docker/api/types/container"
 	"github.com/docker/go-connections/nat"
 )
 
+// Protocol is a string representing a protocol such as TCP or UDP.
+type Protocol string
+
+const (
+	// RandomPort may be passed to a function to indicate
+	// that a random port should be chosen.
+	RandomPort uint16 = 0
+
+	// ProtocolTCP represents a tcp Protocol.
+	ProtocolTCP Protocol = "tcp"
+
+	// ProtocolUDP represents a udp Protocol.
+	ProtocolUDP Protocol = "udp"
+)
+
+// Port represents a port spec that may be used by the *Ports struct
+// to expose a port on a container.
+type Port struct {
+	// Private is the port exposed on the inside of the container
+	// that you wish to map.
+	Private uint16
+
+	// Public is the publicly facing port that you wish to expose
+	// the Private port on. Note, this may be `RandomPort` if you
+	// wish to expose a random port instead of a specific port.
+	Public uint16
+
+	// Address is the IP address to expose the port mapping
+	// on. By default, 0.0.0.0 will be used.
+	Address string
+
+	// Protocol is the network protocol to expose.
+	Protocol Protocol
+}
+
+// Port converts the struct into a nat.Port
+func (s *Port) Port() (nat.Port, error) {
+	return nat.NewPort(
+		string(s.Protocol), fmt.Sprintf("%d", s.Private))
+}
+
+// Binding converts the struct in a a nat.PortBinding. If no address
+// has been given 0.0.0.0 will be used for the host ip.
+func (s *Port) Binding() nat.PortBinding {
+	address := s.Address
+	if address == "" {
+		address = "0.0.0.0"
+	}
+	return nat.PortBinding{
+		HostIP:   address,
+		HostPort: fmt.Sprintf("%d", s.Public),
+	}
+}
+
 // Ports is when to convey port exposures to RunContainer()
 type Ports struct {
-	specs      []string
-	publishall bool
+	// Specs is a map of internal to external ports. The external
+	// port may be the same as the internal port or it may be the
+	// constant `RandomPort` if you wish for Docker to chose a port
+	// for you.
+	Specs []*Port
 }
 
-// NewPorts will produces a new *Ports struct
-func NewPorts() *Ports {
-	return &Ports{specs: []string{}, publishall: true}
-}
+// Bindings will take the port specs and return port bindings that can
+// be used in by the container.HostConfig.PortBindings field.
+func (p *Ports) Bindings() (nat.PortMap, error) {
+	ports := nat.PortMap{}
 
-// Publish is intended to override an internal port with a specific external
-// port.
-//    ports := NewPorts()
-//    ports.Publish(80, 8080) // Will expose the internal port 80 as 8080
-func (ports *Ports) Publish(internal int, external int) {
-	ports.specs = append(
-		ports.specs, fmt.Sprintf("%d:%d", internal, external))
-}
-
-// PublishAll is used to toggle the value for HostConfig.PublishAllPorts.
-func (ports *Ports) PublishAll(enabled bool) {
-	ports.publishall = enabled
-}
-
-// HostConfig converts the struct to a *c.HostConfig which can be used
-// to run containers.
-func (ports *Ports) HostConfig() (*container.HostConfig, error) {
-	config := &container.HostConfig{PublishAllPorts: ports.publishall}
-
-	if len(ports.specs) > 0 {
-		_, bindings, err := nat.ParsePortSpecs(ports.specs)
+	for _, spec := range p.Specs {
+		port, err := spec.Port()
 		if err != nil {
 			return nil, err
 		}
-		config.PortBindings = bindings
+
+		_, exists := ports[port]
+		if !exists {
+			ports[port] = []nat.PortBinding{}
+		}
+
+		ports[port] = append(ports[port], spec.Binding())
 	}
-	return config, nil
+
+	return ports, nil
+}
+
+// Add is a shortcut function to add a new port spec.
+func (p *Ports) Add(port *Port) {
+	p.Specs = append(p.Specs, port)
+}
+
+// NewPorts will produces a new *Ports struct that's ready to be
+// modified.
+func NewPorts() *Ports {
+	return &Ports{Specs: []*Port{}}
 }

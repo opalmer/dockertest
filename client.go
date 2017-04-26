@@ -130,7 +130,14 @@ func (dc *DockerClient) RemoveContainer(ctx context.Context, id string) error {
 //    port, err := c.Port(80)
 //    port.External
 func (dc *DockerClient) RunContainer(ctx context.Context, input *ClientInput) (*ContainerInfo, error) {
-	hostconfig, err := input.Ports.HostConfig()
+	bindings, err := input.Ports.Bindings()
+	if err != nil {
+		return nil, err
+	}
+
+	hostconfig := &container.HostConfig{}
+	hostconfig.PortBindings = bindings
+
 	if err != nil {
 		return nil, err
 	}
