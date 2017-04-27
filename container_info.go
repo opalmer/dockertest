@@ -65,33 +65,57 @@ func (c *ContainerInfo) Refresh() error {
 	return nil
 }
 
-// Port will return types.Port for the requested internal port.
-func (c *ContainerInfo) Port(internal int) (types.Port, error) {
-	for _, port := range c.Data.Ports {
-		if port.PrivatePort == uint16(internal) {
-			return port, nil
-		}
+// address makes its best effort to determine the ip for the given address,
+// port and protocol.
+func (c *ContainerInfo) address(ip string, port uint16, protocol Protocol) (string, error) {
+	if ip != "0.0.0.0" {
+		return ip, nil
 	}
-	return types.Port{}, ErrPortNotFound
-}
-
-// Address will return the most likely address for the given port. This is a
-// best guess effort.
-func (c *ContainerInfo) Address(port types.Port) string {
-	// If there's a url defined then we'll use that
-	// since it's the most likely to work in various
-	// scenarios (docker-machine, local docker and remote docker service)
-	parsed, err := url.Parse(os.Getenv("DOCKER_URL"))
-	if err == nil {
+	if env, set := os.LookupEnv("DOCKER_URL"); set {
+		// If there's a url defined then we'll use that
+		// since it's the most likely to work in various
+		// scenarios (docker-machine, local docker and remote docker service)
+		parsed, err := url.Parse(env)
+		if err != nil {
+			return "", err
+		}
 		host := strings.Split(parsed.Host, ":")
 		if host[0] != "" {
-			return host[0]
+			return host[0], nil
 		}
 	}
-	if port.IP == "0.0.0.0" {
-		return "127.0.0.1"
+
+	// In the majority of cases 127.0.0.1 will be a safe bet if
+	// DOCKER_URL is not set. We could try connecting to the port
+	// but we don't know if the socket is listening yet and we also
+	// can't be 100% certain 127.0.0.1 is connect.
+	return "127.0.0.1", nil
+}
+
+// Port will return types.Port for the requested internal port. Note, attempts
+// will be made to correct the address before returning. If $DOCKER_URL is not
+// set however 127.0.0.1 will be returned if a specific IP was not provided by
+// Docker.
+func (c *ContainerInfo) Port(internal int) (*Port, error) {
+	for _, port := range c.Data.Ports {
+		if port.PrivatePort == uint16(internal) {
+			protocol := ProtocolTCP
+			if port.Type == "udp" {
+				protocol = ProtocolUDP
+			}
+			address, err := c.address(port.IP, port.PublicPort, protocol)
+			if err != nil {
+				return nil, err
+			}
+			return &Port{
+				Private:  port.PrivatePort,
+				Public:   port.PublicPort,
+				Protocol: protocol,
+				Address:  address,
+			}, nil
+		}
 	}
-	return port.IP
+	return nil, ErrPortNotFound
 }
 
 // ID is a shortcut function to return the container's id
