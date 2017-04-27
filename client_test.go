@@ -14,7 +14,8 @@ type ClientTest struct{}
 var _ = Suite(&ClientTest{})
 
 func (s *ClientTest) TestNewClient(c *C) {
-	_, err := NewClient()
+	dc, err := NewClient()
+	defer dc.Client.Close()
 	c.Assert(err, IsNil)
 
 	dockerhost := os.Getenv("DOCKER_HOST")
@@ -31,6 +32,7 @@ func (s *ClientTest) TestNewClient(c *C) {
 
 func (s *ClientTest) TestRunAndRemoveContainer(c *C) {
 	dc, err := NewClient()
+	defer dc.Client.Close()
 	c.Assert(err, IsNil)
 	input := NewClientInput("rabbitmq:3")
 
@@ -49,17 +51,13 @@ func (s *ClientTest) TestRunContainerAttemptsToRetrieveImage(c *C) {
 	input := NewClientInput("abcdefgzyn")
 	_, err = dc.RunContainer(context.Background(), input)
 	c.Assert(err, ErrorMatches,
-		"Error response from daemon: repository abcdefgzyn not " +
+		"Error response from daemon: repository abcdefgzyn not "+
 			"found: does not exist or no pull access")
-
-	//c.Assert(err, IsNil)
-	//c.Assert(info.Refresh(), IsNil)
-	//defer dc.RemoveContainer(context.Background(), info.Data.ID)
 }
-
 
 func (s *ClientTest) TestRemoveContainer(c *C) {
 	dc, err := NewClient()
+	defer dc.Client.Close()
 	c.Assert(err, IsNil)
 	input := NewClientInput("rabbitmq:3")
 	info, err := dc.RunContainer(context.Background(), input)
@@ -71,6 +69,7 @@ func (s *ClientTest) TestRemoveContainer(c *C) {
 func (s *ClientTest) TestListContainers(c *C) {
 	dc, err := NewClient()
 	c.Assert(err, IsNil)
+	defer dc.Client.Close()
 
 	label := fmt.Sprintf("%d", time.Now().Nanosecond())
 	infos := map[string]*ContainerInfo{}
@@ -93,4 +92,12 @@ func (s *ClientTest) TestListContainers(c *C) {
 		c.Assert(ok, Equals, true)
 
 	}
+}
+
+func (s *ClientTest) TestService(c *C) {
+	dc, err := NewClient()
+	c.Assert(err, IsNil)
+	defer dc.Client.Close()
+	svc := dc.Service("foobar")
+	c.Assert(svc.Image, Equals, "foobar")
 }
