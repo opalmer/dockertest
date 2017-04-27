@@ -24,6 +24,12 @@ func (s *TestPorts) TestPortPort(c *C) {
 	np, err := port.Port()
 	c.Assert(err, IsNil)
 	c.Assert(np, Equals, expected)
+
+	port = &Port{
+		Private:  5555,
+	}
+	_, err = port.Port()
+	c.Assert(err, ErrorMatches, "Protocol not specified")
 }
 
 func (s *TestPorts) TestPortBinding(c *C) {
