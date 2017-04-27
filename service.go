@@ -26,35 +26,60 @@ type Ping func(*PingInput) error
 // Service is a struct used to run and manage a container for a specific
 // service.
 type Service struct {
-	ctx       context.Context
-	cancel    context.CancelFunc
-	Image     string
-	Timeout   time.Duration
-	ping      Ping
-	client    *DockerClient
+	// Ping is a function that may be used to wait for the service
+	// to come up before returning. If this function is specified
+	// and it return an error Terminate() will be automatically
+	// called. This function is called by Run() before returning.
+	Ping Ping
+
+	// Image is the container image you wish to run.
+	Image string
+
+	// Timeout defines a duration that's used to prevent operations
+	// related to docker from running forever. If this value is not
+	// provided then DefaultServiceTimeout will be used.
+	Timeout time.Duration
+
+	// Client is the docker client.
+	Client    *DockerClient
 	container *ContainerInfo
+}
+
+func (s *Service) timeout() time.Duration {
+	if s.Timeout.Nanoseconds() != 0 {
+		return s.Timeout
+	}
+	return DefaultServiceTimeout
 }
 
 // Run will run the container.
 func (s *Service) Run() error {
-	ctx, cancel := context.WithTimeout(s.ctx, s.Timeout)
+	if s.Image == "" {
+		return errors.New("No image provided")
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), s.timeout())
 	defer cancel()
 
 	runInput := NewClientInput(s.Image)
 
-	info, err := s.client.RunContainer(ctx, runInput)
+	info, err := s.Client.RunContainer(ctx, runInput)
 	if err != nil {
 		return err
 	}
 	s.container = info
-	input := &PingInput{
-		Service:   s,
-		Container: info,
+
+	if s.Ping != nil {
+		input := &PingInput{
+			Service:   s,
+			Container: info,
+		}
+		if err := s.Ping(input); err != nil {
+			s.Terminate()
+			return err
+		}
 	}
-	if err := s.ping(input); err != nil {
-		s.Terminate()
-		return err
-	}
+
 	return nil
 }
 
@@ -63,32 +88,8 @@ func (s *Service) Terminate() error {
 	if s.container == nil {
 		return errors.New("Container not started")
 	}
-	ctx, cancel := context.WithTimeout(s.ctx, s.Timeout)
+
+	ctx, cancel := context.WithTimeout(context.Background(), s.timeout())
 	defer cancel()
-	err := s.client.RemoveContainer(ctx, s.container.ID())
-	s.cancel()
-	return err
-}
-
-// Ping may be used to override the ping function. This has not effect if Run()
-// has already been called.
-func (s *Service) Ping(ping Ping) {
-	s.ping = ping
-}
-
-// NewService produces a *Service struct.
-func NewService(parent context.Context, image string) (*Service, error) {
-	ctx, cancel := context.WithCancel(parent)
-	client, err := NewClient()
-	if err != nil {
-		cancel()
-		return nil, err
-	}
-	return &Service{
-		ctx:     ctx,
-		cancel:  cancel,
-		Image:   image,
-		Timeout: DefaultServiceTimeout,
-		client:  client,
-	}, nil
+	return s.Client.RemoveContainer(ctx, s.container.ID())
 }

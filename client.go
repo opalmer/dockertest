@@ -137,7 +137,6 @@ func (dc *DockerClient) RunContainer(ctx context.Context, input *ClientInput) (*
 
 	hostconfig := &container.HostConfig{}
 	hostconfig.PortBindings = bindings
-
 	if err != nil {
 		return nil, err
 	}
@@ -172,4 +171,14 @@ creation:
 	info, err := dc.ContainerInfo(ctx, created.ID)
 	info.Warnings = created.Warnings
 	return info, err
+}
+
+// Service will return a *Service struct that may be used to spin up
+// a specific service. See the documentation present on the Service struct
+// for more information.
+func (dc *DockerClient) Service(image string) *Service {
+	return &Service{
+		Image:  image,
+		Client: dc,
+	}
 }
