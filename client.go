@@ -176,9 +176,9 @@ creation:
 // Service will return a *Service struct that may be used to spin up
 // a specific service. See the documentation present on the Service struct
 // for more information.
-func (dc *DockerClient) Service(image string) *Service {
+func (dc *DockerClient) Service(input *ClientInput) *Service {
 	return &Service{
-		Image:  image,
+		Input:  input,
 		Client: dc,
 	}
 }

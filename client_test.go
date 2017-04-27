@@ -34,7 +34,7 @@ func (s *ClientTest) TestRunAndRemoveContainer(c *C) {
 	dc, err := NewClient()
 	defer dc.Client.Close()
 	c.Assert(err, IsNil)
-	input := NewClientInput("rabbitmq:3")
+	input := NewClientInput(testImage)
 
 	info, err := dc.RunContainer(context.Background(), input)
 	c.Assert(err, IsNil)
@@ -59,7 +59,7 @@ func (s *ClientTest) TestRemoveContainer(c *C) {
 	dc, err := NewClient()
 	defer dc.Client.Close()
 	c.Assert(err, IsNil)
-	input := NewClientInput("rabbitmq:3")
+	input := NewClientInput(testImage)
 	info, err := dc.RunContainer(context.Background(), input)
 	c.Assert(err, IsNil)
 	c.Assert(dc.RemoveContainer(context.Background(), info.Data.ID), IsNil)
@@ -74,7 +74,7 @@ func (s *ClientTest) TestListContainers(c *C) {
 	label := fmt.Sprintf("%d", time.Now().Nanosecond())
 	infos := map[string]*ContainerInfo{}
 	for i := 0; i < 4; i++ {
-		input := NewClientInput("rabbitmq:3")
+		input := NewClientInput(testImage)
 		input.SetLabel("time", label)
 		info, err := dc.RunContainer(context.Background(), input)
 		c.Assert(err, IsNil)
@@ -82,7 +82,7 @@ func (s *ClientTest) TestListContainers(c *C) {
 		defer dc.RemoveContainer(context.Background(), info.Data.ID)
 	}
 
-	input := NewClientInput("rabbitmq:3")
+	input := NewClientInput(testImage)
 	input.SetLabel("time", label)
 
 	containers, err := dc.ListContainers(context.Background(), input)
@@ -98,6 +98,7 @@ func (s *ClientTest) TestService(c *C) {
 	dc, err := NewClient()
 	c.Assert(err, IsNil)
 	defer dc.Client.Close()
-	svc := dc.Service("foobar")
-	c.Assert(svc.Image, Equals, "foobar")
+	input := NewClientInput(testImage)
+	svc := dc.Service(input)
+	c.Assert(svc.Input, DeepEquals, input)
 }
