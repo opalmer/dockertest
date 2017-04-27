@@ -1,6 +1,7 @@
 package dockertest
 
 import (
+	"os"
 	"time"
 
 	"github.com/docker/docker/api/types"
@@ -123,4 +124,56 @@ func (s *ContainerInfoTest) TestElapsed(c *C) {
 		c.Assert(err, IsNil)
 		c.Assert(value.Nanoseconds(), Equals, expected.Nanoseconds())
 	}
+}
+
+func (s *ContainerInfoTest) TestAddressDockerURL(c *C) {
+	current, set := os.LookupEnv("DOCKER_URL")
+	if set {
+		defer os.Setenv("DOCKER_URL", current)
+	} else {
+		os.Unsetenv("DOCKER_URL")
+	}
+	os.Setenv("DOCKER_URL", "tcp://1.2.3.4:80/")
+	info := &ContainerInfo{}
+	value, err := info.address("0.0.0.0", 0, ProtocolUDP)
+	c.Assert(err, IsNil)
+	c.Assert(value, Equals, "1.2.3.4")
+}
+
+func (s *ContainerInfoTest) TestAddressCannotParseDockerURL(c *C) {
+	current, set := os.LookupEnv("DOCKER_URL")
+	if set {
+		defer os.Setenv("DOCKER_URL", current)
+	} else {
+		os.Unsetenv("DOCKER_URL")
+	}
+	os.Setenv("DOCKER_URL", "1.2.3.4:80/")
+	info := &ContainerInfo{}
+	value, err := info.address("0.0.0.0", 0, ProtocolUDP)
+	c.Assert(err, ErrorMatches, "parse 1.2.3.4:80/: first path segment in URL cannot contain colon")
+	c.Assert(value, Equals, "")
+}
+
+func (s *ContainerInfoTest) TestAddressIPAlreadySet(c *C) {
+	current, set := os.LookupEnv("DOCKER_URL")
+	if set {
+		defer os.Setenv("DOCKER_URL", current)
+	}
+	os.Unsetenv("DOCKER_URL")
+	info := &ContainerInfo{}
+	value, err := info.address("1.2.3.4", 0, ProtocolUDP)
+	c.Assert(err, IsNil)
+	c.Assert(value, Equals, "1.2.3.4")
+}
+
+func (s *ContainerInfoTest) TestAddressDefault(c *C) {
+	current, set := os.LookupEnv("DOCKER_URL")
+	if set {
+		defer os.Setenv("DOCKER_URL", current)
+	}
+	os.Unsetenv("DOCKER_URL")
+	info := &ContainerInfo{}
+	value, err := info.address("0.0.0.0", 0, ProtocolUDP)
+	c.Assert(err, IsNil)
+	c.Assert(value, Equals, "127.0.0.1")
 }
