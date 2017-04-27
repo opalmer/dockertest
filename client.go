@@ -20,7 +20,7 @@ import (
 var (
 	// ErrContainerNotFound is returned by GetContainer if we were
 	// unable to find the requested c.
-	ErrContainerNotFound = errors.New("failed to locate the container")
+	ErrContainerNotFound = errors.New("failed to locate the Container")
 )
 
 // DockerClient provides a wrapper for the standard dc client
@@ -109,13 +109,13 @@ func (dc *DockerClient) ListContainers(ctx context.Context, input *ClientInput) 
 	return results, errout.ReturnValue()
 }
 
-// RemoveContainer will delete the requested container, force terminating
+// RemoveContainer will delete the requested Container, force terminating
 // it if necessary.
 func (dc *DockerClient) RemoveContainer(ctx context.Context, id string) error {
 	err := dc.Client.ContainerRemove(ctx, id, types.ContainerRemoveOptions{Force: true})
 
 	// client.IsErrNotFound is a bit flaky it seems
-	if err != nil && strings.Contains(err.Error(), "No such container") {
+	if err != nil && strings.Contains(err.Error(), "No such Container") {
 		err = nil
 	}
 	return err

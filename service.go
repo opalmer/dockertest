@@ -20,10 +20,10 @@ type PingInput struct {
 
 // Ping is a function that's used to ping a service before returning from
 // Service.Run. Any errors produced by ping will cause the associated
-// container to be removed.
+// Container to be removed.
 type Ping func(*PingInput) error
 
-// Service is a struct used to run and manage a container for a specific
+// Service is a struct used to run and manage a Container for a specific
 // service.
 type Service struct {
 	// Ping is a function that may be used to wait for the service
@@ -41,8 +41,11 @@ type Service struct {
 	Timeout time.Duration
 
 	// Client is the docker client.
-	Client    *DockerClient
-	container *ContainerInfo
+	Client *DockerClient
+
+	// Container will container information about the running container
+	// once Run() has finished.
+	Container *ContainerInfo
 }
 
 func (s *Service) timeout() time.Duration {
@@ -52,7 +55,7 @@ func (s *Service) timeout() time.Duration {
 	return DefaultServiceTimeout
 }
 
-// Run will run the container.
+// Run will run the Container.
 func (s *Service) Run() error {
 	if s.Input == nil {
 		return errors.New("Input field not provided")
@@ -65,7 +68,7 @@ func (s *Service) Run() error {
 	if err != nil {
 		return err
 	}
-	s.container = info
+	s.Container = info
 
 	if s.Ping != nil {
 		input := &PingInput{
@@ -81,13 +84,13 @@ func (s *Service) Run() error {
 	return nil
 }
 
-// Terminate terminates the container and returns.
+// Terminate terminates the Container and returns.
 func (s *Service) Terminate() error {
-	if s.container == nil {
+	if s.Container == nil {
 		return errors.New("Container not started")
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), s.timeout())
 	defer cancel()
-	return s.Client.RemoveContainer(ctx, s.container.ID())
+	return s.Client.RemoveContainer(ctx, s.Container.ID())
 }

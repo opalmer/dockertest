@@ -19,13 +19,13 @@ var (
 	// to find a matching port on the c.
 	ErrPortNotFound = errors.New("The requested port could not be found")
 
-	// ErrContainerNotRunning is returned by Started() if the container
+	// ErrContainerNotRunning is returned by Started() if the Container
 	// was never started.
-	ErrContainerNotRunning = errors.New("container not running")
+	ErrContainerNotRunning = errors.New("Container not running")
 
-	// ErrContainerStillRunning is returned by Finished() if the container
+	// ErrContainerStillRunning is returned by Finished() if the Container
 	// is still running.
-	ErrContainerStillRunning = errors.New("container still running")
+	ErrContainerStillRunning = errors.New("Container still running")
 )
 
 // ContainerInfo provides a wrapper around information
@@ -118,12 +118,12 @@ func (c *ContainerInfo) Port(internal int) (*Port, error) {
 	return nil, ErrPortNotFound
 }
 
-// ID is a shortcut function to return the container's id
+// ID is a shortcut function to return the Container's id
 func (c *ContainerInfo) ID() string {
 	return c.Data.ID
 }
 
-// Started returns the time the container was started at.
+// Started returns the time the Container was started at.
 func (c *ContainerInfo) Started() (time.Time, error) {
 	if c.State.StartedAt == timeNotSet {
 		return time.Unix(0, 0).UTC(), ErrContainerNotRunning
@@ -131,7 +131,7 @@ func (c *ContainerInfo) Started() (time.Time, error) {
 	return time.Parse(time.RFC3339Nano, c.State.StartedAt)
 }
 
-// Finished returns the time the container finished running.
+// Finished returns the time the Container finished running.
 func (c *ContainerInfo) Finished() (time.Time, error) {
 	if c.State.FinishedAt == timeNotSet {
 		return time.Unix(0, 0).UTC(), ErrContainerStillRunning
@@ -139,8 +139,8 @@ func (c *ContainerInfo) Finished() (time.Time, error) {
 	return time.Parse(time.RFC3339Nano, c.State.FinishedAt)
 }
 
-// Elapsed returns how long the container has been running or had run if
-// the container has stopped.
+// Elapsed returns how long the Container has been running or had run if
+// the Container has stopped.
 func (c *ContainerInfo) Elapsed() (time.Duration, error) {
 	started, err := c.Started()
 	if err != nil {
