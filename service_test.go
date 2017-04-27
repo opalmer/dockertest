@@ -1,10 +1,12 @@
 package dockertest
 
 import (
-	. "gopkg.in/check.v1"
-	"time"
-	"net"
 	"fmt"
+	"net"
+	"time"
+
+	"github.com/pkg/errors"
+	. "gopkg.in/check.v1"
 )
 
 type ServiceTest struct{}
@@ -33,8 +35,8 @@ func (*ServiceTest) TestRunWithPing(c *C) {
 
 	input := NewClientInput(testImage)
 	input.Ports.Add(&Port{
-		Private: 80,
-		Public: RandomPort,
+		Private:  80,
+		Public:   RandomPort,
 		Protocol: ProtocolTCP,
 	})
 	svc := dc.Service(input)
@@ -51,5 +53,19 @@ func (*ServiceTest) TestRunWithPing(c *C) {
 		}
 	}
 	c.Assert(svc.Run(), IsNil)
+	c.Assert(svc.Terminate(), IsNil)
+}
+
+func (*ServiceTest) TestErrorOnPingCallsTerminate(c *C) {
+	dc, err := NewClient()
+	c.Assert(err, IsNil)
+	defer dc.Client.Close()
+
+	input := NewClientInput(testImage)
+	svc := dc.Service(input)
+	svc.Ping = func(input *PingInput) error {
+		return errors.New("Some error")
+	}
+	c.Assert(svc.Run(), ErrorMatches, "Some error")
 	c.Assert(svc.Terminate(), IsNil)
 }

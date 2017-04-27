@@ -32,8 +32,8 @@ type Service struct {
 	// called. This function is called by Run() before returning.
 	Ping Ping
 
-	// Image is the container image you wish to run.
-	Image string
+	// Input is used to control the inputs to Run()
+	Input *ClientInput
 
 	// Timeout defines a duration that's used to prevent operations
 	// related to docker from running forever. If this value is not
@@ -54,16 +54,14 @@ func (s *Service) timeout() time.Duration {
 
 // Run will run the container.
 func (s *Service) Run() error {
-	if s.Image == "" {
-		return errors.New("No image provided")
+	if s.Input == nil {
+		return errors.New("Input field not provided")
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), s.timeout())
 	defer cancel()
 
-	runInput := NewClientInput(s.Image)
-
-	info, err := s.Client.RunContainer(ctx, runInput)
+	info, err := s.Client.RunContainer(ctx, s.Input)
 	if err != nil {
 		return err
 	}
