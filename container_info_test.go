@@ -131,7 +131,7 @@ func (s *ContainerInfoTest) TestAddressDockerURL(c *C) {
 	if set {
 		defer os.Setenv("DOCKER_URL", current)
 	} else {
-		os.Unsetenv("DOCKER_URL")
+		defer os.Unsetenv("DOCKER_URL")
 	}
 	os.Setenv("DOCKER_URL", "tcp://1.2.3.4:80/")
 	info := &ContainerInfo{}
@@ -145,7 +145,7 @@ func (s *ContainerInfoTest) TestAddressCannotParseDockerURL(c *C) {
 	if set {
 		defer os.Setenv("DOCKER_URL", current)
 	} else {
-		os.Unsetenv("DOCKER_URL")
+		defer os.Unsetenv("DOCKER_URL")
 	}
 	os.Setenv("DOCKER_URL", "1.2.3.4:80/")
 	info := &ContainerInfo{}
