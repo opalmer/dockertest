@@ -35,10 +35,28 @@ func (s *ClientTest) TestRunAndRemoveContainer(c *C) {
 	input := NewClientInput("rabbitmq:3")
 
 	info, err := dc.RunContainer(context.Background(), input)
-	c.Assert(info.Refresh(), IsNil)
 	c.Assert(err, IsNil)
+	c.Assert(info.Refresh(), IsNil)
 	defer dc.RemoveContainer(context.Background(), info.Data.ID)
 }
+
+func (s *ClientTest) TestRunContainerAttemptsToRetrieveImage(c *C) {
+	dc, err := NewClient()
+	c.Assert(err, IsNil)
+
+	// Some random image so it will force the client to try to pull the
+	// image down.
+	input := NewClientInput("abcdefgzyn")
+	_, err = dc.RunContainer(context.Background(), input)
+	c.Assert(err, ErrorMatches,
+		"Error response from daemon: repository abcdefgzyn not " +
+			"found: does not exist or no pull access")
+
+	//c.Assert(err, IsNil)
+	//c.Assert(info.Refresh(), IsNil)
+	//defer dc.RemoveContainer(context.Background(), info.Data.ID)
+}
+
 
 func (s *ClientTest) TestRemoveContainer(c *C) {
 	dc, err := NewClient()
