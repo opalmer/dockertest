@@ -17,7 +17,7 @@ import "github.com/opalmer/dockertest"
 
 func main() {
 	client, err := dockertest.NewClient()
-	input := dockertest.NewClientInput("nginx")
+	input := dockertest.NewClientInput("nginx:mainline-alpine")
 	input.Ports.Add(&dockertest.Port{
 		Private: 80,
 		Public: dockertest.RandomPort,
@@ -38,7 +38,13 @@ import (
 
 func main() {
 	client, _ := dockertest.NewClient()
-	service := client.Service("nginx")
+	input := NewClientInput("nginx:mainline-alpine")
+	input.Ports.Add(&dockertest.Port{
+		Private: 80,
+		Public: dockertest.RandomPort,
+		Protocol: dockertest.ProtocolTCP,
+	})
+	service := client.Service(input)
 	service.Ping = func(input *dockertest.PingInput) error {
 		port, err := input.Container.Port(80)
 		if err != nil {
