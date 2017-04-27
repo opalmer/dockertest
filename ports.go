@@ -32,14 +32,14 @@ type Port struct {
 	// Public is the publicly facing port that you wish to expose
 	// the Private port on. Note, this may be `RandomPort` if you
 	// wish to expose a random port instead of a specific port.
-	Public uint16
+	Public uint16 `json:"port"`
 
 	// Address is the IP address to expose the port mapping
 	// on. By default, 0.0.0.0 will be used.
-	Address string
+	Address string `json:"address"`
 
 	// Protocol is the network protocol to expose.
-	Protocol Protocol
+	Protocol Protocol `json:"protocol"`
 }
 
 // Port converts the struct into a nat.Port
