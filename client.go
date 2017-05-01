@@ -114,10 +114,12 @@ func (dc *DockerClient) ListContainers(ctx context.Context, input *ClientInput) 
 func (dc *DockerClient) RemoveContainer(ctx context.Context, id string) error {
 	err := dc.Client.ContainerRemove(ctx, id, types.ContainerRemoveOptions{Force: true})
 
-	// client.IsErrNotFound is a bit flaky it seems
-	if err != nil && strings.Contains(err.Error(), "No such Container") {
-		err = nil
+	// Docker's API does not expose their error structs and their
+	// IsErrNotFound does not seem to work.
+	if err != nil && strings.Contains(err.Error(), "No such container") {
+		return nil
 	}
+
 	return err
 }
 
