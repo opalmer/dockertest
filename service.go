@@ -12,6 +12,16 @@ const (
 	DefaultServiceTimeout = time.Minute * 3
 )
 
+var (
+	// ErrInputNotProvided is returned by Service.Run if the Input field
+	// is not provided.
+	ErrInputNotProvided = errors.New("Input field not provided")
+
+	// ErrContainerNotStarted is returned by Terminate() if the container
+	// was never started.
+	ErrContainerNotStarted = errors.New("Container not started")
+)
+
 // PingInput is used to provide inputs to a Ping function.
 type PingInput struct {
 	Service   *Service
@@ -62,7 +72,7 @@ func (s *Service) timeout() time.Duration {
 // Run will run the Container.
 func (s *Service) Run() error {
 	if s.Input == nil {
-		return errors.New("Input field not provided")
+		return ErrInputNotProvided
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), s.timeout())
@@ -91,7 +101,7 @@ func (s *Service) Run() error {
 // Terminate terminates the Container and returns.
 func (s *Service) Terminate() error {
 	if s.Container == nil {
-		return errors.New("Container not started")
+		return ErrContainerNotStarted
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), s.timeout())
