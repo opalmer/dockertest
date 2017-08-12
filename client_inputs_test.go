@@ -10,6 +10,12 @@ type ClientInputsTest struct{}
 
 var _ = Suite(&ClientInputsTest{})
 
+func (s *ClientInputsTest) TestAddEnvironmentVar(c *C) {
+	input := NewClientInput("test")
+	input.AddEnvironmentVar("foo", "bar")
+	c.Assert(input.Environment, DeepEquals, []string{"foo=bar"})
+}
+
 func (s *ClientInputsTest) TestSetLabel(c *C) {
 	input := NewClientInput("test")
 	input.SetLabel("foo", "bar")

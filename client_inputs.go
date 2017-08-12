@@ -10,9 +10,10 @@ import (
 
 // ClientInput is used to provide inputs to the RunContainer function.
 type ClientInput struct {
-	Image  string
-	Ports  *Ports
-	Labels map[string]string
+	Image       string
+	Ports       *Ports
+	Labels      map[string]string
+	Environment []string
 
 	// Fields provided for the purposes of filtering containers.
 	Since     string
@@ -38,7 +39,14 @@ func (i *ClientInput) ContainerConfig() *container.Config {
 	return &container.Config{
 		Image:  i.Image,
 		Labels: i.Labels,
+		Env:    i.Environment,
 	}
+}
+
+// AddEnvironmentVar adds an environment variable
+func (i *ClientInput) AddEnvironmentVar(key string, value string) {
+	i.Environment = append(
+		i.Environment, fmt.Sprintf("%s=%s", key, value))
 }
 
 // FilterArgs converts *ClientInput into a filters.Args struct
