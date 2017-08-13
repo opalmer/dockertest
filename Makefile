@@ -2,7 +2,6 @@ PACKAGES = $(shell go list . | grep -v /vendor/)
 PACKAGE_DIRS = $(shell go list -f '{{ .Dir }}' ./... | grep -v /vendor/)
 SOURCES = $(shell for f in $(PACKAGES); do ls $$GOPATH/src/$$f/*.go; done)
 EXTRA_DEPENDENCIES = \
-    github.com/kardianos/govendor \
     github.com/golang/lint/golint \
     github.com/golang/dep/cmd/dep
 
