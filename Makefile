@@ -1,22 +1,26 @@
-PACKAGES = $(shell go list . | grep -v /vendor/)
-PACKAGE_DIRS = $(shell go list -f '{{ .Dir }}' ./... | grep -v /vendor/)
+PACKAGES = $(shell go list ./... | grep -v /vendor/)
+
+# Same as $(PACKAGES) except we get directory paths. We exclude the first line
+# because it contains the top level directory which contains /vendor/
+PACKAGE_DIRS=$(shell go list -f '{{ .Dir }}' ./... | egrep -v /vendor/ | tail -n +2)
+
 SOURCES = $(shell for f in $(PACKAGES); do ls $$GOPATH/src/$$f/*.go; done)
 EXTRA_DEPENDENCIES = \
-    github.com/kardianos/govendor \
     github.com/golang/lint/golint \
-    github.com/golang/dep/cmd/dep
+    github.com/golang/dep/cmd/dep \
+    github.com/wadey/gocovmerge
 
 check: deps vet lint test
 
 deps:
-	go get -u $(EXTRA_DEPENDENCIES)
+	go get $(EXTRA_DEPENDENCIES)
 	dep ensure
 
 lint:
 	golint -set_exit_status $(PACKAGES)
 
 fmt:
-	go fmt $(PACKAGES)
+	gofmt -w -s $(SOURCES)
 	goimports -w $(SOURCES)
 
 vet:
