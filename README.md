@@ -2,7 +2,8 @@
 
 [![Build Status](https://travis-ci.org/opalmer/dockertest.svg?branch=master)](https://travis-ci.org/opalmer/dockertest)
 [![codecov](https://codecov.io/gh/opalmer/dockertest/branch/master/graph/badge.svg)](https://codecov.io/gh/opalmer/dockertest)
-
+[![Go Report Card](https://goreportcard.com/badge/github.com/opalmer/dockertest)](https://goreportcard.com/report/github.com/opalmer/dockertest)
+[![GoDoc](https://godoc.org/github.com/opalmer/dockertest?status.svg)](https://godoc.org/github.com/opalmer/dockertest)
 
 This project provides a small set of wrappers around docker. It is intended
 to be used to ease testing. Documentation is available via godoc: 
