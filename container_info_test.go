@@ -105,13 +105,13 @@ func (s *ContainerInfoTest) TestElapsed(c *C) {
 		return t.Format(time.RFC3339Nano)
 	}
 	expectations := map[*ContainerInfo]time.Duration{
-		&ContainerInfo{
+		{
 			State: &types.ContainerState{
 				StartedAt:  timeNotSet,
 				FinishedAt: timeNotSet,
 			},
 		}: time.Second * 0,
-		&ContainerInfo{
+		{
 			State: &types.ContainerState{
 				StartedAt:  toValue(time.Date(2017, time.January, 1, 0, 0, 0, 0, time.UTC)),
 				FinishedAt: toValue(time.Date(2017, time.January, 1, 1, 0, 0, 0, time.UTC)),
