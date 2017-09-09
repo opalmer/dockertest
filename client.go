@@ -127,7 +127,7 @@ func (d *DockerClient) RunContainer(input *ClientInput) (*ContainerInfo, error) 
 		return nil, err
 	}
 
-	ctx, cancel := context.WithTimeout(d.ctx, input.GetTimeout())
+	ctx, cancel := context.WithTimeout(context.Background(), input.GetTimeout())
 	defer cancel()
 
 	for {
