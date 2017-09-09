@@ -127,14 +127,8 @@ func (d *DockerClient) RunContainer(input *ClientInput) (*ContainerInfo, error) 
 		return nil, err
 	}
 
-	ctx, cancel := context.WithTimeout(d.ctx, DefaultServiceTimeout)
+	ctx, cancel := context.WithTimeout(d.ctx, input.GetTimeout())
 	defer cancel()
-
-	if input.Timeout.Nanoseconds() > 0 {
-		cancel()
-		ctx, cancel = context.WithTimeout(d.ctx, input.Timeout)
-		defer cancel()
-	}
 
 	for {
 		created, err := d.docker.ContainerCreate(
@@ -165,11 +159,7 @@ func (d *DockerClient) RunContainer(input *ClientInput) (*ContainerInfo, error) 
 // a specific service. See the documentation present on the Service struct
 // for more information.
 func (d *DockerClient) Service(input *ClientInput) *Service {
-	timeout := input.Timeout
-	if timeout.Nanoseconds() == 0 {
-		timeout = DefaultServiceTimeout
-	}
-	ctx, cancel := context.WithTimeout(d.ctx, timeout)
+	ctx, cancel := context.WithTimeout(d.ctx, input.GetTimeout())
 	go func() {
 		defer cancel()
 		<-ctx.Done()

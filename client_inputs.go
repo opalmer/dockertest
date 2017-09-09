@@ -24,6 +24,15 @@ type ClientInput struct {
 	OlderThan time.Duration
 }
 
+// GetTimeout returns an appropriate time.Duration. If the `Timeout` field
+// was never set then `DefaultServiceTimeout` will be returned.
+func (i *ClientInput) GetTimeout() time.Duration {
+	if i.Timeout.Nanoseconds() == 0 {
+		return DefaultServiceTimeout
+	}
+	return i.Timeout
+}
+
 // SetLabel will add set the provided label key to the provided value.
 func (i *ClientInput) SetLabel(key string, value string) {
 	i.Labels[key] = value
