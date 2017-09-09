@@ -24,7 +24,6 @@ var (
 // abstracted. Use NewClient() to construct and produce this struct.
 type DockerClient struct {
 	docker *client.Client
-	ctx    context.Context
 }
 
 // ContainerInfo retrieves a single container by id and returns a
@@ -34,7 +33,7 @@ func (d *DockerClient) ContainerInfo(id string) (*ContainerInfo, error) {
 	args.Add("id", id)
 
 	options := types.ContainerListOptions{Filters: args, All: true}
-	containers, err := d.docker.ContainerList(d.ctx, options)
+	containers, err := d.docker.ContainerList(context.Background(), options)
 	if err != nil {
 		return nil, err
 	}
@@ -43,7 +42,7 @@ func (d *DockerClient) ContainerInfo(id string) (*ContainerInfo, error) {
 		return nil, ErrContainerNotFound
 	}
 
-	inspection, err := d.docker.ContainerInspect(d.ctx, id)
+	inspection, err := d.docker.ContainerInspect(context.Background(), id)
 	if err != nil {
 		return nil, err
 	}
@@ -67,7 +66,10 @@ func (d *DockerClient) ListContainers(input *ClientInput) ([]*ContainerInfo, err
 		Filters: input.FilterArgs(),
 	}
 
-	listed, err := d.docker.ContainerList(d.ctx, options)
+	ctx, cancel := context.WithTimeout(context.Background(), input.GetTimeout())
+	defer cancel()
+
+	listed, err := d.docker.ContainerList(ctx, options)
 	if err != nil {
 		return nil, err
 	}
@@ -103,7 +105,7 @@ func (d *DockerClient) ListContainers(input *ClientInput) ([]*ContainerInfo, err
 // RemoveContainer will delete the requested Container, force terminating
 // it if necessary.
 func (d *DockerClient) RemoveContainer(id string) error {
-	err := d.docker.ContainerRemove(d.ctx, id, types.ContainerRemoveOptions{Force: true})
+	err := d.docker.ContainerRemove(context.Background(), id, types.ContainerRemoveOptions{Force: true})
 
 	// Docker's API does not expose their error structs and their
 	// IsErrNotFound does not seem to work.
@@ -165,7 +167,7 @@ func (d *DockerClient) Service(input *ClientInput) *Service {
 }
 
 // NewClient produces a *DockerClient struct.
-func NewClient(ctx context.Context) (*DockerClient, error) {
+func NewClient() (*DockerClient, error) {
 	docker, err := client.NewEnvClient()
-	return &DockerClient{docker: docker, ctx: ctx}, err
+	return &DockerClient{docker: docker}, err
 }

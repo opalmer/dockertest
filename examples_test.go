@@ -1,7 +1,6 @@
 package dockertest
 
 import (
-	"context"
 	"fmt"
 	"log"
 	"net"
@@ -29,7 +28,7 @@ func (s *ExamplesTest) TestExampleDockerClient_Service(c *C) {
 //
 
 func ExampleNewClient() {
-	client, err := NewClient(context.Background())
+	client, err := NewClient()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -62,7 +61,7 @@ func ExampleNewClient() {
 }
 
 func ExampleDockerClient_Service() {
-	client, _ := NewClient(context.Background())
+	client, _ := NewClient()
 
 	// Construct information about the container to start.
 	input := NewClientInput("nginx:mainline-alpine")

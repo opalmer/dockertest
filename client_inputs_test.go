@@ -76,5 +76,6 @@ func (s *ClientInputsTest) TestNewClientInput(c *C) {
 		Labels: map[string]string{
 			"dockertest": "1",
 		},
+		Timeout: DefaultServiceTimeout,
 	})
 }

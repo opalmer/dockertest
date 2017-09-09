@@ -82,9 +82,10 @@ func (i *ClientInput) FilterArgs() filters.Args {
 // NewClientInput produces a *ClientInput struct.
 func NewClientInput(image string) *ClientInput {
 	input := &ClientInput{
-		Image:  image,
-		Ports:  NewPorts(),
-		Labels: map[string]string{},
+		Image:   image,
+		Ports:   NewPorts(),
+		Labels:  map[string]string{},
+		Timeout: DefaultServiceTimeout,
 	}
 	input.SetLabel("dockertest", "1")
 	return input

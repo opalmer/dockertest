@@ -27,14 +27,14 @@ func (s *ClientTest) addCleanup(f func() error) {
 }
 
 func (s *ClientTest) newClient(c *C) *DockerClient {
-	dc, err := NewClient(context.Background())
+	dc, err := NewClient()
 	c.Assert(err, IsNil)
 	return dc
 }
 
 func (s *ClientTest) TestNewClient(c *C) {
 	dc := s.newClient(c)
-	dc, err := NewClient(context.Background())
+	dc, err := NewClient()
 	s.addCleanup(dc.docker.Close)
 	c.Assert(err, IsNil)
 
@@ -46,7 +46,7 @@ func (s *ClientTest) TestNewClient(c *C) {
 	}
 
 	c.Assert(os.Setenv("DOCKER_HOST", "/////"), IsNil)
-	_, err = NewClient(context.Background())
+	_, err = NewClient()
 	c.Assert(err, ErrorMatches, "unable to parse docker host `/////`")
 }
 
