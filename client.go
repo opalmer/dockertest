@@ -137,13 +137,9 @@ func (d *DockerClient) RunContainer(ctx context.Context, input *ClientInput) (*C
 		return nil, err
 	}
 
+	var created container.ContainerCreateCreatedBody
 	hostconfig := &container.HostConfig{}
 	hostconfig.PortBindings = bindings
-	if err != nil {
-		return nil, err
-	}
-
-	var created container.ContainerCreateCreatedBody
 
 creation:
 	for {
