@@ -31,7 +31,7 @@ func (*ServiceTest) TestNoInput(c *C) {
 func (*ServiceTest) TestRunWithPing(c *C) {
 	dc, err := NewClient()
 	c.Assert(err, IsNil)
-	defer dc.docker.Close()
+	defer dc.docker.Close() // nolint: errcheck
 
 	input := NewClientInput(testImage)
 	input.Ports.Add(&Port{
@@ -48,7 +48,7 @@ func (*ServiceTest) TestRunWithPing(c *C) {
 			if err != nil {
 				continue
 			}
-			defer con.Close()
+			defer con.Close() // nolint: errcheck
 			return nil
 		}
 	}
@@ -59,7 +59,7 @@ func (*ServiceTest) TestRunWithPing(c *C) {
 func (*ServiceTest) TestErrorOnPingCallsTerminate(c *C) {
 	dc, err := NewClient()
 	c.Assert(err, IsNil)
-	defer dc.docker.Close()
+	defer dc.docker.Close() // nolint: errcheck
 
 	input := NewClientInput(testImage)
 	svc := dc.Service(input)

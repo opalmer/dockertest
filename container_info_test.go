@@ -129,11 +129,11 @@ func (s *ContainerInfoTest) TestElapsed(c *C) {
 func (s *ContainerInfoTest) TestAddressDockerURL(c *C) {
 	current, set := os.LookupEnv("DOCKER_URL")
 	if set {
-		defer os.Setenv("DOCKER_URL", current)
+		defer os.Setenv("DOCKER_URL", current) // nolint: errcheck
 	} else {
-		defer os.Unsetenv("DOCKER_URL")
+		defer os.Unsetenv("DOCKER_URL") // nolint: errcheck
 	}
-	os.Setenv("DOCKER_URL", "tcp://1.2.3.4:80/")
+	c.Assert(os.Setenv("DOCKER_URL", "tcp://1.2.3.4:80/"), IsNil)
 	info := &ContainerInfo{}
 	value, err := info.address("0.0.0.0", 0, ProtocolUDP)
 	c.Assert(err, IsNil)
@@ -143,11 +143,11 @@ func (s *ContainerInfoTest) TestAddressDockerURL(c *C) {
 func (s *ContainerInfoTest) TestAddressCannotParseDockerURL(c *C) {
 	current, set := os.LookupEnv("DOCKER_URL")
 	if set {
-		defer os.Setenv("DOCKER_URL", current)
+		defer os.Setenv("DOCKER_URL", current) // nolint: errcheck
 	} else {
-		defer os.Unsetenv("DOCKER_URL")
+		defer os.Unsetenv("DOCKER_URL") // nolint: errcheck
 	}
-	os.Setenv("DOCKER_URL", "1.2.3.4:80/")
+	c.Assert(os.Setenv("DOCKER_URL", "1.2.3.4:80/"), IsNil)
 	info := &ContainerInfo{}
 	value, err := info.address("0.0.0.0", 0, ProtocolUDP)
 	c.Assert(err, ErrorMatches, "parse 1.2.3.4:80/: first path segment in URL cannot contain colon")
@@ -157,9 +157,9 @@ func (s *ContainerInfoTest) TestAddressCannotParseDockerURL(c *C) {
 func (s *ContainerInfoTest) TestAddressIPAlreadySet(c *C) {
 	current, set := os.LookupEnv("DOCKER_URL")
 	if set {
-		defer os.Setenv("DOCKER_URL", current)
+		defer os.Setenv("DOCKER_URL", current) // nolint: errcheck
 	}
-	os.Unsetenv("DOCKER_URL")
+	c.Assert(os.Unsetenv("DOCKER_URL"), IsNil)
 	info := &ContainerInfo{}
 	value, err := info.address("1.2.3.4", 0, ProtocolUDP)
 	c.Assert(err, IsNil)
@@ -169,9 +169,9 @@ func (s *ContainerInfoTest) TestAddressIPAlreadySet(c *C) {
 func (s *ContainerInfoTest) TestAddressDefault(c *C) {
 	current, set := os.LookupEnv("DOCKER_URL")
 	if set {
-		defer os.Setenv("DOCKER_URL", current)
+		defer os.Setenv("DOCKER_URL", current) // nolint: errcheck
 	}
-	os.Unsetenv("DOCKER_URL")
+	c.Assert(os.Unsetenv("DOCKER_URL"), IsNil)
 	info := &ContainerInfo{}
 	value, err := info.address("0.0.0.0", 0, ProtocolUDP)
 	c.Assert(err, IsNil)

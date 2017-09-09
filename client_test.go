@@ -16,31 +16,31 @@ var _ = Suite(&ClientTest{})
 
 func (s *ClientTest) TestNewClient(c *C) {
 	dc, err := NewClient()
-	defer dc.docker.Close()
+	defer dc.docker.Close() // nolint: errcheck
 	c.Assert(err, IsNil)
 
 	dockerhost := os.Getenv("DOCKER_HOST")
 	if dockerhost != "" {
-		defer os.Setenv("DOCKER_HOST", dockerhost)
+		defer os.Setenv("DOCKER_HOST", dockerhost) // nolint: errcheck
 	} else {
-		defer os.Unsetenv("DOCKER_HOST")
+		defer os.Unsetenv("DOCKER_HOST") // nolint: errcheck
 	}
 
-	os.Setenv("DOCKER_HOST", "/////")
+	c.Assert(os.Setenv("DOCKER_HOST", "/////"), IsNil)
 	_, err = NewClient()
 	c.Assert(err, ErrorMatches, "unable to parse docker host `/////`")
 }
 
 func (s *ClientTest) TestRunAndRemoveContainer(c *C) {
 	dc, err := NewClient()
-	defer dc.docker.Close()
+	defer dc.docker.Close() // nolint: errcheck
 	c.Assert(err, IsNil)
 	input := NewClientInput(testImage)
 
 	info, err := dc.RunContainer(context.Background(), input)
 	c.Assert(err, IsNil)
 	c.Assert(info.Refresh(), IsNil)
-	defer dc.RemoveContainer(context.Background(), info.Data.ID)
+	c.Assert(dc.RemoveContainer(context.Background(), info.Data.ID), IsNil)
 }
 
 func (s *ClientTest) TestRunContainerAttemptsToRetrieveImage(c *C) {
@@ -57,7 +57,7 @@ func (s *ClientTest) TestRunContainerAttemptsToRetrieveImage(c *C) {
 
 func (s *ClientTest) TestRemoveContainer(c *C) {
 	dc, err := NewClient()
-	defer dc.docker.Close()
+	defer dc.docker.Close() // nolint: errcheck
 	c.Assert(err, IsNil)
 	input := NewClientInput(testImage)
 	info, err := dc.RunContainer(context.Background(), input)
@@ -69,7 +69,7 @@ func (s *ClientTest) TestRemoveContainer(c *C) {
 func (s *ClientTest) TestListContainers(c *C) {
 	dc, err := NewClient()
 	c.Assert(err, IsNil)
-	defer dc.docker.Close()
+	defer dc.docker.Close() // nolint: errcheck
 
 	label := fmt.Sprintf("%d", time.Now().Nanosecond())
 	infos := map[string]*ContainerInfo{}
@@ -79,7 +79,6 @@ func (s *ClientTest) TestListContainers(c *C) {
 		info, err := dc.RunContainer(context.Background(), input)
 		c.Assert(err, IsNil)
 		infos[info.Data.ID] = info
-		defer dc.RemoveContainer(context.Background(), info.Data.ID)
 	}
 
 	input := NewClientInput(testImage)
@@ -90,14 +89,17 @@ func (s *ClientTest) TestListContainers(c *C) {
 	for _, entry := range containers {
 		_, ok := infos[entry.Data.ID]
 		c.Assert(ok, Equals, true)
+	}
 
+	for key := range infos {
+		c.Assert(dc.RemoveContainer(context.Background(), key), IsNil)
 	}
 }
 
 func (s *ClientTest) TestService(c *C) {
 	dc, err := NewClient()
 	c.Assert(err, IsNil)
-	defer dc.docker.Close()
+	defer dc.docker.Close() // nolint: errcheck
 	input := NewClientInput(testImage)
 	svc := dc.Service(input)
 	c.Assert(svc.Input, DeepEquals, input)
