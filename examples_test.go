@@ -4,11 +4,10 @@ import (
 	"context"
 	"fmt"
 	"log"
-
 	"net"
+	"time"
 
 	. "gopkg.in/check.v1"
-	"time"
 )
 
 type ExamplesTest struct{}
