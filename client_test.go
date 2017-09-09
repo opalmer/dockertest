@@ -3,7 +3,6 @@ package dockertest
 import (
 	"context"
 	"fmt"
-	"os"
 	"strings"
 	"time"
 
@@ -45,17 +44,6 @@ func (s *ClientTest) TestNewClient(c *C) {
 	dc, err := NewClient(context.Background())
 	s.addCleanup(dc.docker.Close)
 	c.Assert(err, IsNil)
-
-	dockerhost := os.Getenv("DOCKER_HOST")
-	if dockerhost != "" {
-		defer os.Setenv("DOCKER_HOST", dockerhost) // nolint: errcheck
-	} else {
-		defer os.Unsetenv("DOCKER_HOST") // nolint: errcheck
-	}
-
-	c.Assert(os.Setenv("DOCKER_HOST", "/////"), IsNil)
-	_, err = NewClient(context.Background())
-	c.Assert(err, ErrorMatches, "unable to parse docker host `/////`")
 }
 
 func (s *ClientTest) TestRunAndRemoveContainer(c *C) {
@@ -92,7 +80,6 @@ func (s *ClientTest) TestRemoveContainer(c *C) {
 	input := NewClientInput(testImage)
 	info, err := dc.RunContainer(input)
 	c.Assert(err, IsNil)
-	c.Assert(dc.RemoveContainer(info.Data.ID), IsNil)
 	c.Assert(dc.RemoveContainer(info.Data.ID), IsNil)
 }
 
