@@ -67,6 +67,14 @@ func (s *ClientTest) TestRunAndRemoveContainer(c *C) {
 	c.Assert(dc.RemoveContainer(info.Data.ID), IsNil)
 }
 
+func (s *ClientTest) TestRunContainerDeadlineExceeded(c *C) {
+	dc := s.newClient(c)
+	input := NewClientInput(testImage)
+	input.Timeout = time.Nanosecond
+	_, err := dc.RunContainer(input)
+	c.Assert(err, ErrorMatches, context.DeadlineExceeded.Error())
+}
+
 func (s *ClientTest) TestRunContainerAttemptsToRetrieveImage(c *C) {
 	dc := s.newClient(c)
 
@@ -85,6 +93,12 @@ func (s *ClientTest) TestRemoveContainer(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(dc.RemoveContainer(info.Data.ID), IsNil)
 	c.Assert(dc.RemoveContainer(info.Data.ID), IsNil)
+}
+
+func (s *ClientTest) TestContainerInfo(c *C) {
+	dc := s.newClient(c)
+	_, err := dc.ContainerInfo("foobar")
+	c.Assert(err, ErrorMatches, ErrContainerNotFound.Error())
 }
 
 func (s *ClientTest) TestListContainers(c *C) {

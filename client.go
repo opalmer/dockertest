@@ -3,8 +3,6 @@ package dockertest
 import (
 	"context"
 	"errors"
-	"io"
-	"io/ioutil"
 	"strings"
 
 	"github.com/crewjam/errset"
@@ -128,6 +126,7 @@ func (d *DockerClient) RunContainer(input *ClientInput) (*ContainerInfo, error) 
 	if err != nil {
 		return nil, err
 	}
+
 	ctx, cancel := context.WithTimeout(d.ctx, DefaultServiceTimeout)
 	defer cancel()
 
@@ -147,9 +146,7 @@ func (d *DockerClient) RunContainer(input *ClientInput) (*ContainerInfo, error) 
 			if err != nil {
 				return nil, err
 			}
-			if _, err := io.Copy(ioutil.Discard, reader); err != nil {
-				return nil, err
-			}
+			reader.Close() // nolint: errcheck
 			continue
 		}
 		if err != nil {

@@ -41,6 +41,7 @@ func (s *ContainerInfoTest) TestPort(c *C) {
 			Ports: []types.Port{{
 				PrivatePort: 50000,
 				PublicPort:  2,
+				Type:        "udp",
 			}},
 		},
 	}
