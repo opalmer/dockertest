@@ -159,12 +159,9 @@ func (d *DockerClient) RunContainer(input *ClientInput) (*ContainerInfo, error) 
 // a specific service. See the documentation present on the Service struct
 // for more information.
 func (d *DockerClient) Service(input *ClientInput) *Service {
-	ctx, cancel := context.WithTimeout(d.ctx, input.GetTimeout())
-	go func() {
-		defer cancel()
-		<-ctx.Done()
-	}()
-	return &Service{Context: ctx, Input: input, Client: d}
+	return &Service{
+		Context: context.Background(),
+		Input:   input, Client: d}
 }
 
 // NewClient produces a *DockerClient struct.
