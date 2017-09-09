@@ -27,7 +27,8 @@ func (s *ClientTest) addCleanup(f func() error) {
 }
 
 func (s *ClientTest) newClient(c *C) *DockerClient {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*1)
+	ctx, cancel := context.WithTimeout(
+		context.Background(), DefaultServiceTimeout)
 	s.addCleanup(func() error {
 		cancel()
 		return nil
@@ -108,10 +109,13 @@ func (s *ClientTest) TestListContainers(c *C) {
 	infos := map[string]*ContainerInfo{}
 	for i := 0; i < 4; i++ {
 		input := NewClientInput(testImage)
-		input.SetLabel("time", label)
+		input.Timeout = time.Minute * 2
 		info, err := dc.RunContainer(input)
-		c.Assert(err, IsNil)
-		infos[info.Data.ID] = info
+		if err == nil {
+			infos[info.Data.ID] = info
+			continue
+		}
+		c.Assert(err, ErrorMatches, context.DeadlineExceeded.Error())
 	}
 
 	input := NewClientInput(testImage)
