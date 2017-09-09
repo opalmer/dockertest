@@ -64,6 +64,15 @@ func (d *DockerClient) ContainerInfo(ctx context.Context, id string) (*Container
 	}, nil
 }
 
+func (d *DockerClient) getContainerInfo(ctx context.Context, id string, containers chan *ContainerInfo, errs chan error) {
+	info, err := d.ContainerInfo(ctx, id)
+	if err != nil {
+		errs <- err
+		return
+	}
+	containers <- info
+}
+
 // ListContainers will return a list of *ContainerInfo structs based on the
 // provided input.
 func (d *DockerClient) ListContainers(ctx context.Context, input *ClientInput) ([]*ContainerInfo, error) {
@@ -83,14 +92,7 @@ func (d *DockerClient) ListContainers(ctx context.Context, input *ClientInput) (
 	errs := make(chan error)
 
 	for _, entry := range containers {
-		go func(c types.Container) {
-			info, err := d.ContainerInfo(ctx, c.ID)
-			if err != nil {
-				errs <- err
-				return
-			}
-			infos <- info
-		}(entry)
+		go d.getContainerInfo(ctx, entry.ID, infos, errs)
 	}
 
 	results := []*ContainerInfo{}
@@ -135,44 +137,33 @@ func (d *DockerClient) RunContainer(ctx context.Context, input *ClientInput) (*C
 		return nil, err
 	}
 
-	hostconfig := &container.HostConfig{}
-	hostconfig.PortBindings = bindings
-	if err != nil {
-		return nil, err
-	}
-
-	var created container.ContainerCreateCreatedBody
-creation:
 	for {
-		created, err = d.docker.ContainerCreate(
+		created, err := d.docker.ContainerCreate(
 			ctx,
 			input.ContainerConfig(),
-			hostconfig, &network.NetworkingConfig{}, "")
-		switch {
-		case client.IsErrNotFound(err):
+			&container.HostConfig{PortBindings: bindings},
+			&network.NetworkingConfig{}, "")
+		if err == nil {
+			err = d.docker.ContainerStart(ctx, created.ID, types.ContainerStartOptions{})
+			if err != nil {
+				return nil, err
+			}
+
+			info, err := d.ContainerInfo(ctx, created.ID)
+			info.Warnings = created.Warnings
+			return info, err
+		}
+
+		if client.IsErrNotFound(err) {
 			reader, err := d.docker.ImagePull(context.Background(), input.Image, types.ImagePullOptions{})
 			if err != nil {
 				return nil, err
 			}
-			if _, err := io.Copy(ioutil.Discard, reader); err != nil {
-				return nil, err
-			}
-		case err != nil:
-			return nil, err
-		case err == nil:
-			break creation
+			io.Copy(ioutil.Discard, reader) // nolint: errcheck
+			continue
 		}
-
-	}
-
-	err = d.docker.ContainerStart(ctx, created.ID, types.ContainerStartOptions{})
-	if err != nil {
 		return nil, err
 	}
-
-	info, err := d.ContainerInfo(ctx, created.ID)
-	info.Warnings = created.Warnings
-	return info, err
 }
 
 // Service will return a *Service struct that may be used to spin up

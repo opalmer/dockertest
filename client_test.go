@@ -112,6 +112,55 @@ func (s *ClientTest) TestListContainers(c *C) {
 	}
 }
 
+func (s *ClientTest) Test_getContainerInfo_ErrContainerNotFound(c *C) {
+	dc := s.newClient(c)
+	errs := make(chan error, 1)
+	containers := make(chan *ContainerInfo)
+	dc.getContainerInfo(context.Background(), "hello", containers, errs)
+	c.Assert(<-errs, ErrorMatches, ErrContainerNotFound.Error())
+}
+
+func (s *ClientTest) Test_getContainerInfo(c *C) {
+	dc := s.newClient(c)
+	errs := make(chan error)
+	containers := make(chan *ContainerInfo, 1)
+	input := NewClientInput(testImage)
+	info, err := dc.RunContainer(context.Background(), input)
+	c.Assert(err, IsNil)
+	dc.getContainerInfo(context.Background(), info.ID(), containers, errs)
+	c.Assert(dc.RemoveContainer(context.Background(), info.ID()), IsNil)
+	container := <-containers
+	c.Assert(container.ID(), Equals, info.ID())
+}
+
+func (s *ClientTest) TestListContainersContainersRemoved(c *C) {
+	dc := s.newClient(c)
+
+	label := fmt.Sprintf("%d", time.Now().Nanosecond())
+	infos := map[string]*ContainerInfo{}
+	for i := 0; i < 4; i++ {
+		input := NewClientInput(testImage)
+		info, err := dc.RunContainer(context.Background(), input)
+		c.Assert(err, IsNil)
+		infos[info.Data.ID] = info
+		c.Assert(dc.RemoveContainer(context.Background(), info.Data.ID), IsNil)
+	}
+
+	input := NewClientInput(testImage)
+	input.SetLabel("time", label)
+
+	containers, err := dc.ListContainers(context.Background(), input)
+	c.Assert(err, IsNil)
+	for _, entry := range containers {
+		_, ok := infos[entry.Data.ID]
+		c.Assert(ok, Equals, true)
+	}
+
+	for key := range infos {
+		c.Assert(dc.RemoveContainer(context.Background(), key), IsNil)
+	}
+}
+
 func (s *ClientTest) TestService(c *C) {
 	dc := s.newClient(c)
 	input := NewClientInput(testImage)
