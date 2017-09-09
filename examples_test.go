@@ -6,6 +6,8 @@ import (
 	"net"
 	"time"
 
+	"context"
+
 	. "gopkg.in/check.v1"
 )
 
@@ -42,7 +44,7 @@ func ExampleNewClient() {
 	})
 
 	// Start the container
-	container, err := client.RunContainer(input)
+	container, err := client.RunContainer(context.Background(), input)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -55,7 +57,7 @@ func ExampleNewClient() {
 
 	fmt.Println(port.Public, port.Address)
 
-	if err := client.RemoveContainer(container.ID()); err != nil {
+	if err := client.RemoveContainer(context.Background(), container.ID()); err != nil {
 		log.Fatal(err)
 	}
 }

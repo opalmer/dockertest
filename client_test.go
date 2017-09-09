@@ -1,6 +1,7 @@
 package dockertest
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"strings"
@@ -53,10 +54,10 @@ func (s *ClientTest) TestRunAndRemoveContainer(c *C) {
 	dc := s.newClient(c)
 	input := NewClientInput(testImage)
 
-	info, err := dc.RunContainer(input)
+	info, err := dc.RunContainer(context.Background(), input)
 	c.Assert(err, IsNil)
 	c.Assert(info.Refresh(), IsNil)
-	c.Assert(dc.RemoveContainer(info.Data.ID), IsNil)
+	c.Assert(dc.RemoveContainer(context.Background(), info.Data.ID), IsNil)
 }
 
 func (s *ClientTest) TestRunContainerAttemptsToRetrieveImage(c *C) {
@@ -65,7 +66,7 @@ func (s *ClientTest) TestRunContainerAttemptsToRetrieveImage(c *C) {
 	// Some random image so it will force the client to try to pull the
 	// image down.
 	input := NewClientInput("988881adc9fc3655077dc2d4d757d480b5ea0e11")
-	_, err := dc.RunContainer(input)
+	_, err := dc.RunContainer(context.Background(), input)
 	c.Assert(err, NotNil)
 	c.Assert(strings.Contains(err.Error(), "does not exist"), Equals, true)
 }
@@ -73,14 +74,14 @@ func (s *ClientTest) TestRunContainerAttemptsToRetrieveImage(c *C) {
 func (s *ClientTest) TestRemoveContainer(c *C) {
 	dc := s.newClient(c)
 	input := NewClientInput(testImage)
-	info, err := dc.RunContainer(input)
+	info, err := dc.RunContainer(context.Background(), input)
 	c.Assert(err, IsNil)
-	c.Assert(dc.RemoveContainer(info.Data.ID), IsNil)
+	c.Assert(dc.RemoveContainer(context.Background(), info.Data.ID), IsNil)
 }
 
 func (s *ClientTest) TestContainerInfo(c *C) {
 	dc := s.newClient(c)
-	_, err := dc.ContainerInfo("foobar")
+	_, err := dc.ContainerInfo(context.Background(), "foobar")
 	c.Assert(err, ErrorMatches, ErrContainerNotFound.Error())
 }
 
@@ -91,7 +92,7 @@ func (s *ClientTest) TestListContainers(c *C) {
 	infos := map[string]*ContainerInfo{}
 	for i := 0; i < 4; i++ {
 		input := NewClientInput(testImage)
-		info, err := dc.RunContainer(input)
+		info, err := dc.RunContainer(context.Background(), input)
 		infos[info.Data.ID] = info
 		c.Assert(err, IsNil)
 	}
@@ -99,7 +100,7 @@ func (s *ClientTest) TestListContainers(c *C) {
 	input := NewClientInput(testImage)
 	input.SetLabel("time", label)
 
-	containers, err := dc.ListContainers(input)
+	containers, err := dc.ListContainers(context.Background(), input)
 	c.Assert(err, IsNil)
 	for _, entry := range containers {
 		_, ok := infos[entry.Data.ID]
@@ -107,7 +108,7 @@ func (s *ClientTest) TestListContainers(c *C) {
 	}
 
 	for key := range infos {
-		c.Assert(dc.RemoveContainer(key), IsNil)
+		c.Assert(dc.RemoveContainer(context.Background(), key), IsNil)
 	}
 }
 

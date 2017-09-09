@@ -3,6 +3,8 @@ package dockertest
 import (
 	"context"
 	"errors"
+	"io"
+	"io/ioutil"
 	"strings"
 
 	"github.com/crewjam/errset"
@@ -15,25 +17,32 @@ import (
 
 var (
 	// ErrContainerNotFound is returned by GetContainer if we were
-	// unable to find the requested container.
-	ErrContainerNotFound = errors.New("failed to locate the container")
+	// unable to find the requested c.
+	ErrContainerNotFound = errors.New("failed to locate the Container")
 )
 
-// DockerClient provides a wrapper for the standard docker client. The intent
-// is to wrap common operations so the internal of docker's own client are
-// abstracted. Use NewClient() to construct and produce this struct.
+// DockerClient provides a wrapper for the standard dc client
 type DockerClient struct {
 	docker *client.Client
 }
 
-// ContainerInfo retrieves a single container by id and returns a
-// *ContainerInfo struct.
-func (d *DockerClient) ContainerInfo(id string) (*ContainerInfo, error) {
+// NewClient produces a new *DockerClient that can be used to interact
+// with Docker.
+func NewClient() (*DockerClient, error) {
+	docker, err := client.NewEnvClient()
+	if err != nil {
+		return nil, err
+	}
+	return &DockerClient{docker: docker}, nil
+}
+
+// ContainerInfo retrieves a single c by id and returns a *ContainerInfo
+// struct.
+func (d *DockerClient) ContainerInfo(ctx context.Context, id string) (*ContainerInfo, error) {
 	args := filters.NewArgs()
 	args.Add("id", id)
-
 	options := types.ContainerListOptions{Filters: args, All: true}
-	containers, err := d.docker.ContainerList(context.Background(), options)
+	containers, err := d.docker.ContainerList(ctx, options)
 	if err != nil {
 		return nil, err
 	}
@@ -42,15 +51,14 @@ func (d *DockerClient) ContainerInfo(id string) (*ContainerInfo, error) {
 		return nil, ErrContainerNotFound
 	}
 
-	inspection, err := d.docker.ContainerInspect(context.Background(), id)
+	inspection, err := d.docker.ContainerInspect(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 
 	return &ContainerInfo{
-		Data:     containers[0],
-		State:    inspection.State,
-		JSON:     inspection,
+		Data:  containers[0],
+		State: inspection.State, JSON: inspection,
 		Warnings: []string{},
 		client:   d,
 	}, nil
@@ -58,7 +66,7 @@ func (d *DockerClient) ContainerInfo(id string) (*ContainerInfo, error) {
 
 // ListContainers will return a list of *ContainerInfo structs based on the
 // provided input.
-func (d *DockerClient) ListContainers(input *ClientInput) ([]*ContainerInfo, error) {
+func (d *DockerClient) ListContainers(ctx context.Context, input *ClientInput) ([]*ContainerInfo, error) {
 	options := types.ContainerListOptions{
 		All:     input.All,
 		Since:   input.Since,
@@ -66,32 +74,32 @@ func (d *DockerClient) ListContainers(input *ClientInput) ([]*ContainerInfo, err
 		Filters: input.FilterArgs(),
 	}
 
-	listed, err := d.docker.ContainerList(context.Background(), options)
+	containers, err := d.docker.ContainerList(ctx, options)
 	if err != nil {
 		return nil, err
 	}
 
-	containers := make(chan *ContainerInfo)
+	infos := make(chan *ContainerInfo)
 	errs := make(chan error)
 
-	for _, entry := range listed {
+	for _, entry := range containers {
 		go func(c types.Container) {
-			info, err := d.ContainerInfo(c.ID)
+			info, err := d.ContainerInfo(ctx, c.ID)
 			if err != nil {
 				errs <- err
 				return
 			}
-			containers <- info
+			infos <- info
 		}(entry)
 	}
 
 	results := []*ContainerInfo{}
 	errout := errset.ErrSet{}
-	for i := 0; i < len(listed); i++ {
+	for i := 0; i < len(containers); i++ {
 		select {
 		case err := <-errs:
 			errout = append(errout, err)
-		case info := <-containers:
+		case info := <-infos:
 			results = append(results, info)
 		}
 	}
@@ -101,14 +109,15 @@ func (d *DockerClient) ListContainers(input *ClientInput) ([]*ContainerInfo, err
 
 // RemoveContainer will delete the requested Container, force terminating
 // it if necessary.
-func (d *DockerClient) RemoveContainer(id string) error {
-	err := d.docker.ContainerRemove(context.Background(), id, types.ContainerRemoveOptions{Force: true})
+func (d *DockerClient) RemoveContainer(ctx context.Context, id string) error {
+	err := d.docker.ContainerRemove(ctx, id, types.ContainerRemoveOptions{Force: true})
 
 	// Docker's API does not expose their error structs and their
 	// IsErrNotFound does not seem to work.
 	if err != nil && strings.Contains(err.Error(), "No such container") {
 		return nil
 	}
+
 	return err
 }
 
@@ -120,46 +129,58 @@ func (d *DockerClient) RemoveContainer(id string) error {
 //    c := client.RunContainer("testimage", "testing", nil)
 //    port, err := c.Port(80)
 //    port.External
-func (d *DockerClient) RunContainer(input *ClientInput) (*ContainerInfo, error) {
+func (d *DockerClient) RunContainer(ctx context.Context, input *ClientInput) (*ContainerInfo, error) {
 	bindings, err := input.Ports.Bindings()
 	if err != nil {
 		return nil, err
 	}
 
+	hostconfig := &container.HostConfig{}
+	hostconfig.PortBindings = bindings
+	if err != nil {
+		return nil, err
+	}
+
+	var created container.ContainerCreateCreatedBody
+creation:
 	for {
-		created, err := d.docker.ContainerCreate(
-			context.Background(),
+		created, err = d.docker.ContainerCreate(
+			ctx,
 			input.ContainerConfig(),
-			&container.HostConfig{PortBindings: bindings}, &network.NetworkingConfig{}, "")
-		if client.IsErrNotFound(err) {
+			hostconfig, &network.NetworkingConfig{}, "")
+		switch {
+		case client.IsErrNotFound(err):
 			reader, err := d.docker.ImagePull(context.Background(), input.Image, types.ImagePullOptions{})
 			if err != nil {
 				return nil, err
 			}
-			reader.Close() // nolint: errcheck
-			continue
-		}
-		if err != nil {
+			if _, err := io.Copy(ioutil.Discard, reader); err != nil {
+				return nil, err
+			}
+		case err != nil:
 			return nil, err
+		case err == nil:
+			break creation
 		}
-		if err := d.docker.ContainerStart(context.Background(), created.ID, types.ContainerStartOptions{}); err != nil {
-			return nil, err
-		}
-		info, err := d.ContainerInfo(created.ID)
-		info.Warnings = created.Warnings
-		return info, err
+
 	}
+
+	err = d.docker.ContainerStart(ctx, created.ID, types.ContainerStartOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	info, err := d.ContainerInfo(ctx, created.ID)
+	info.Warnings = created.Warnings
+	return info, err
 }
 
 // Service will return a *Service struct that may be used to spin up
 // a specific service. See the documentation present on the Service struct
 // for more information.
 func (d *DockerClient) Service(input *ClientInput) *Service {
-	return &Service{Input: input, Client: d}
-}
-
-// NewClient produces a *DockerClient struct.
-func NewClient() (*DockerClient, error) {
-	docker, err := client.NewEnvClient()
-	return &DockerClient{docker: docker}, err
+	return &Service{
+		Input:  input,
+		Client: d,
+	}
 }

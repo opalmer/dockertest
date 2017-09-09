@@ -1,16 +1,10 @@
 package dockertest
 
 import (
+	"context"
 	"errors"
-	"time"
 
 	"github.com/crewjam/errset"
-)
-
-const (
-	// DefaultServiceTimeout is the default timeout that's applied
-	// to all service operations.
-	DefaultServiceTimeout = time.Minute * 3
 )
 
 var (
@@ -64,7 +58,7 @@ func (s *Service) Run() error {
 		return ErrInputNotProvided
 	}
 
-	info, err := s.Client.RunContainer(s.Input)
+	info, err := s.Client.RunContainer(context.Background(), s.Input)
 	if err != nil {
 		return err
 	}
@@ -91,5 +85,5 @@ func (s *Service) Terminate() error {
 	if s.Container == nil {
 		return ErrContainerNotStarted
 	}
-	return s.Client.RemoveContainer(s.Container.ID())
+	return s.Client.RemoveContainer(context.Background(), s.Container.ID())
 }
