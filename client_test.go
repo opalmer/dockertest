@@ -10,13 +10,39 @@ import (
 	. "gopkg.in/check.v1"
 )
 
-type ClientTest struct{}
+type ClientTest struct {
+	cleanups []func() error
+}
 
 var _ = Suite(&ClientTest{})
 
+func (s *ClientTest) TearDownSuite(c *C) {
+	for _, function := range s.cleanups {
+		c.Assert(function(), IsNil)
+	}
+}
+
+func (s *ClientTest) addCleanup(f func() error) {
+	s.cleanups = append(s.cleanups, f)
+}
+
+func (s *ClientTest) newClient(c *C) *DockerClient {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*1)
+	s.addCleanup(func() error {
+		cancel()
+		return nil
+	})
+
+	dc, err := NewClient(ctx)
+	s.addCleanup(dc.docker.Close)
+	c.Assert(err, IsNil)
+	return dc
+}
+
 func (s *ClientTest) TestNewClient(c *C) {
+	dc := s.newClient(c)
 	dc, err := NewClient(context.Background())
-	defer dc.docker.Close() // nolint: errcheck
+	s.addCleanup(dc.docker.Close)
 	c.Assert(err, IsNil)
 
 	dockerhost := os.Getenv("DOCKER_HOST")
@@ -32,9 +58,7 @@ func (s *ClientTest) TestNewClient(c *C) {
 }
 
 func (s *ClientTest) TestRunAndRemoveContainer(c *C) {
-	dc, err := NewClient(context.Background())
-	defer dc.docker.Close() // nolint: errcheck
-	c.Assert(err, IsNil)
+	dc := s.newClient(c)
 	input := NewClientInput(testImage)
 
 	info, err := dc.RunContainer(input)
@@ -44,21 +68,18 @@ func (s *ClientTest) TestRunAndRemoveContainer(c *C) {
 }
 
 func (s *ClientTest) TestRunContainerAttemptsToRetrieveImage(c *C) {
-	dc, err := NewClient(context.Background())
-	c.Assert(err, IsNil)
+	dc := s.newClient(c)
 
 	// Some random image so it will force the client to try to pull the
 	// image down.
-	input := NewClientInput("abcdefgzyn")
-	_, err = dc.RunContainer(input)
+	input := NewClientInput("988881adc9fc3655077dc2d4d757d480b5ea0e11")
+	_, err := dc.RunContainer(input)
 	c.Assert(err, NotNil)
 	c.Assert(strings.Contains(err.Error(), "does not exist"), Equals, true)
 }
 
 func (s *ClientTest) TestRemoveContainer(c *C) {
-	dc, err := NewClient(context.Background())
-	defer dc.docker.Close() // nolint: errcheck
-	c.Assert(err, IsNil)
+	dc := s.newClient(c)
 	input := NewClientInput(testImage)
 	info, err := dc.RunContainer(input)
 	c.Assert(err, IsNil)
@@ -67,9 +88,7 @@ func (s *ClientTest) TestRemoveContainer(c *C) {
 }
 
 func (s *ClientTest) TestListContainers(c *C) {
-	dc, err := NewClient(context.Background())
-	c.Assert(err, IsNil)
-	defer dc.docker.Close() // nolint: errcheck
+	dc := s.newClient(c)
 
 	label := fmt.Sprintf("%d", time.Now().Nanosecond())
 	infos := map[string]*ContainerInfo{}
@@ -97,9 +116,7 @@ func (s *ClientTest) TestListContainers(c *C) {
 }
 
 func (s *ClientTest) TestService(c *C) {
-	dc, err := NewClient(context.Background())
-	c.Assert(err, IsNil)
-	defer dc.docker.Close() // nolint: errcheck
+	dc := s.newClient(c)
 	input := NewClientInput(testImage)
 	svc := dc.Service(input)
 	c.Assert(svc.Input, DeepEquals, input)
