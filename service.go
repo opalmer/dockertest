@@ -50,11 +50,6 @@ type Service struct {
 	// Input is used to control the inputs to Run()
 	Input *ClientInput
 
-	// Timeout defines a duration that's used to prevent operations
-	// related to docker from running forever. If this value is not
-	// provided then DefaultServiceTimeout will be used.
-	Timeout time.Duration
-
 	// Client is the docker client.
 	Client *DockerClient
 

@@ -31,4 +31,4 @@ vet:
 	go vet $(PACKAGES)
 
 test:
-	go test -race -coverprofile=coverage.txt -covermode=atomic -check.v $(PACKAGES)
+	go test -race -coverprofile=coverage.txt -covermode=atomic -check.vv $(PACKAGES)
