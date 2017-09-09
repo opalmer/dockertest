@@ -29,12 +29,6 @@ type DockerClient struct {
 	ctx    context.Context
 }
 
-// NewClient produces a *DockerClient struct.
-func NewClient(ctx context.Context) (*DockerClient, error) {
-	docker, err := client.NewEnvClient()
-	return &DockerClient{docker: docker, ctx: ctx}, err
-}
-
 // ContainerInfo retrieves a single container by id and returns a
 // *ContainerInfo struct.
 func (d *DockerClient) ContainerInfo(id string) (*ContainerInfo, error) {
@@ -179,4 +173,10 @@ func (d *DockerClient) Service(input *ClientInput) *Service {
 	}
 	ctx, _ := context.WithTimeout(d.ctx, timeout)
 	return &Service{Context: ctx, Input: input, Client: d}
+}
+
+// NewClient produces a *DockerClient struct.
+func NewClient(ctx context.Context) (*DockerClient, error) {
+	docker, err := client.NewEnvClient()
+	return &DockerClient{docker: docker, ctx: ctx}, err
 }
