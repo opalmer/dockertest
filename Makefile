@@ -8,7 +8,7 @@ SOURCES = $(shell for f in $(PACKAGES); do ls $$GOPATH/src/$$f/*.go; done)
 EXTRA_DEPENDENCIES = \
     github.com/golang/lint/golint \
     github.com/golang/dep/cmd/dep \
-    github.com/wadey/gocovmerge
+    github.com/alecthomas/gometalinter
 
 check: deps vet lint test
 
