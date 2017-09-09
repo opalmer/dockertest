@@ -17,11 +17,11 @@ const (
 var (
 	// ErrInputNotProvided is returned by Service.Run if the Input field
 	// is not provided.
-	ErrInputNotProvided = errors.New("Input field not provided")
+	ErrInputNotProvided = errors.New("input field not provided")
 
 	// ErrContainerNotStarted is returned by Terminate() if the container
 	// was never started.
-	ErrContainerNotStarted = errors.New("Container not started")
+	ErrContainerNotStarted = errors.New("container not started")
 )
 
 // PingInput is used to provide inputs to a Ping function.

@@ -16,15 +16,15 @@ const timeNotSet = "0001-01-01T00:00:00Z"
 var (
 	// ErrPortNotFound is returned by ContainerInfo.Port if we're unable
 	// to find a matching port on the c.
-	ErrPortNotFound = errors.New("The requested port could not be found")
+	ErrPortNotFound = errors.New("the requested port could not be found")
 
 	// ErrContainerNotRunning is returned by Started() if the Container
 	// was never started.
-	ErrContainerNotRunning = errors.New("Container not running")
+	ErrContainerNotRunning = errors.New("container not running")
 
 	// ErrContainerStillRunning is returned by Finished() if the Container
 	// is still running.
-	ErrContainerStillRunning = errors.New("Container still running")
+	ErrContainerStillRunning = errors.New("container still running")
 )
 
 // ContainerInfo provides a wrapper around information

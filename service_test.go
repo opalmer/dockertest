@@ -15,7 +15,7 @@ var _ = Suite(&ServiceTest{})
 
 func (*ServiceTest) TestNoInput(c *C) {
 	s := &Service{}
-	c.Assert(s.Run(), ErrorMatches, "Input field not provided")
+	c.Assert(s.Run(), ErrorMatches, ErrInputNotProvided.Error())
 }
 
 func (*ServiceTest) TestRunWithPing(c *C) {
