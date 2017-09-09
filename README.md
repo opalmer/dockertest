@@ -21,17 +21,17 @@ import (
 )
 
 func main() {
-	client, err := NewClient()
+	client, err := dockertest.NewClient()
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	// Construct information about the container to start.
-	input := NewClientInput("nginx:mainline-alpine")
-	input.Ports.Add(&Port{
+	input := dockertest.NewClientInput("nginx:mainline-alpine")
+	input.Ports.Add(&dockertest.Port{
 		Private:  80,
-		Public:   RandomPort,
-		Protocol: ProtocolTCP,
+		Public:   dockertest.RandomPort,
+		Protocol: dockertest.ProtocolTCP,
 	})
 
 	// Start the container
@@ -64,23 +64,23 @@ import (
 )
 
 func main() {
-	client, err := NewClient()
+	client, err := dockertest.NewClient()
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	// Construct information about the container to start.
-	input := NewClientInput("nginx:mainline-alpine")
-	input.Ports.Add(&Port{
+	input := dockertest.NewClientInput("nginx:mainline-alpine")
+	input.Ports.Add(&dockertest.Port{
 		Private:  80,
-		Public:   RandomPort,
-		Protocol: ProtocolTCP,
+		Public:   dockertest.RandomPort,
+		Protocol: dockertest.ProtocolTCP,
 	})
 
 	// Construct the service and tell it how to handle waiting
 	// for the container to start.
 	service := client.Service(input)
-	service.Ping = func(input *PingInput) error {
+	service.Ping = func(input *dockertest.PingInput) error {
 		port, err := input.Container.Port(80)
 		if err != nil {
 			return err // Will cause Run() to call Terminate()
