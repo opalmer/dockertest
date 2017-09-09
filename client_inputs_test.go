@@ -1,8 +1,6 @@
 package dockertest
 
 import (
-	"time"
-
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
 	. "gopkg.in/check.v1"
@@ -16,14 +14,6 @@ func (s *ClientInputsTest) TestAddEnvironmentVar(c *C) {
 	input := NewClientInput("test")
 	input.AddEnvironmentVar("foo", "bar")
 	c.Assert(input.Environment, DeepEquals, []string{"foo=bar"})
-}
-
-func (s *ClientInputsTest) TestGetTimeout(c *C) {
-	input := NewClientInput("test")
-	input.Timeout = time.Second * 0
-	c.Assert(input.GetTimeout(), Equals, DefaultServiceTimeout)
-	input.Timeout = time.Second * 15
-	c.Assert(input.GetTimeout(), Equals, time.Second*15)
 }
 
 func (s *ClientInputsTest) TestSetLabel(c *C) {
@@ -76,6 +66,5 @@ func (s *ClientInputsTest) TestNewClientInput(c *C) {
 		Labels: map[string]string{
 			"dockertest": "1",
 		},
-		Timeout: DefaultServiceTimeout,
 	})
 }

@@ -14,7 +14,6 @@ type ClientInput struct {
 	Ports       *Ports
 	Labels      map[string]string
 	Environment []string
-	Timeout     time.Duration
 
 	// Fields provided for the purposes of filtering containers.
 	Since     string
@@ -22,15 +21,6 @@ type ClientInput struct {
 	Status    string
 	All       bool
 	OlderThan time.Duration
-}
-
-// GetTimeout returns an appropriate time.Duration. If the `Timeout` field
-// was never set then `DefaultServiceTimeout` will be returned.
-func (i *ClientInput) GetTimeout() time.Duration {
-	if i.Timeout.Nanoseconds() == 0 {
-		return DefaultServiceTimeout
-	}
-	return i.Timeout
 }
 
 // SetLabel will add set the provided label key to the provided value.
@@ -82,10 +72,9 @@ func (i *ClientInput) FilterArgs() filters.Args {
 // NewClientInput produces a *ClientInput struct.
 func NewClientInput(image string) *ClientInput {
 	input := &ClientInput{
-		Image:   image,
-		Ports:   NewPorts(),
-		Labels:  map[string]string{},
-		Timeout: DefaultServiceTimeout,
+		Image:  image,
+		Ports:  NewPorts(),
+		Labels: map[string]string{},
 	}
 	input.SetLabel("dockertest", "1")
 	return input

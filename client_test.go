@@ -1,7 +1,6 @@
 package dockertest
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"strings"
@@ -92,13 +91,9 @@ func (s *ClientTest) TestListContainers(c *C) {
 	infos := map[string]*ContainerInfo{}
 	for i := 0; i < 4; i++ {
 		input := NewClientInput(testImage)
-		input.Timeout = time.Minute * 2
 		info, err := dc.RunContainer(input)
-		if err == nil {
-			infos[info.Data.ID] = info
-			continue
-		}
-		c.Assert(err, ErrorMatches, context.DeadlineExceeded.Error())
+		infos[info.Data.ID] = info
+		c.Assert(err, IsNil)
 	}
 
 	input := NewClientInput(testImage)
