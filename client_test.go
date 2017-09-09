@@ -7,6 +7,7 @@ import (
 	"time"
 
 	. "gopkg.in/check.v1"
+	"strings"
 )
 
 type ClientTest struct{}
@@ -50,9 +51,8 @@ func (s *ClientTest) TestRunContainerAttemptsToRetrieveImage(c *C) {
 	// image down.
 	input := NewClientInput("abcdefgzyn")
 	_, err = dc.RunContainer(context.Background(), input)
-	c.Assert(err, ErrorMatches,
-		"Error response from daemon: repository abcdefgzyn not "+
-			"found: does not exist or no pull access")
+	c.Assert(err, NotNil)
+	c.Assert(strings.Contains(err.Error(), "does not exist"),  Equals, true)
 }
 
 func (s *ClientTest) TestRemoveContainer(c *C) {
