@@ -134,6 +134,7 @@ func (d *DockerClient) RunContainer(input *ClientInput) (*ContainerInfo, error) 
 	if input.Timeout.Nanoseconds() > 0 {
 		cancel()
 		ctx, cancel = context.WithTimeout(d.ctx, input.Timeout)
+		defer cancel()
 	}
 
 	for {
@@ -171,7 +172,11 @@ func (d *DockerClient) Service(input *ClientInput) *Service {
 	if timeout.Nanoseconds() == 0 {
 		timeout = DefaultServiceTimeout
 	}
-	ctx, _ := context.WithTimeout(d.ctx, timeout)
+	ctx, cancel := context.WithTimeout(d.ctx, timeout)
+	go func() {
+		defer cancel()
+		<-ctx.Done()
+	}()
 	return &Service{Context: ctx, Input: input, Client: d}
 }
 
