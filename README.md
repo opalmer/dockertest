@@ -21,7 +21,7 @@ import (
 )
 
 func main() {
-	client, err := NewClient(context.Background())
+	client, err := NewClient()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -35,7 +35,7 @@ func main() {
 	})
 
 	// Start the container
-	container, err := client.RunContainer(input)
+	container, err := client.RunContainer(context.Background(), input)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -48,7 +48,7 @@ func main() {
 
 	fmt.Println(port.Public, port.Address)
 
-	if err := client.RemoveContainer(container.ID()); err != nil {
+	if err := client.RemoveContainer(context.Background(), container.ID()); err != nil {
 		log.Fatal(err)
 	}
 }
@@ -64,7 +64,10 @@ import (
 )
 
 func main() {
-	client, _ := NewClient(context.Background())
+	client, err := NewClient()
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	// Construct information about the container to start.
 	input := NewClientInput("nginx:mainline-alpine")

@@ -63,7 +63,10 @@ func ExampleNewClient() {
 }
 
 func ExampleDockerClient_Service() {
-	client, _ := NewClient()
+	client, err := NewClient()
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	// Construct information about the container to start.
 	input := NewClientInput("nginx:mainline-alpine")
