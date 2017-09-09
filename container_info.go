@@ -1,7 +1,6 @@
 package dockertest
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"net/url"
@@ -57,7 +56,7 @@ func (c *ContainerInfo) HasLabel(name string, value string) bool {
 
 // Refresh will refresh the data present on this struct.
 func (c *ContainerInfo) Refresh() error {
-	updated, err := c.client.ContainerInfo(context.Background(), c.ID())
+	updated, err := c.client.ContainerInfo(c.ID())
 	if err != nil {
 		return err
 	}

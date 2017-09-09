@@ -15,7 +15,7 @@ type ClientTest struct{}
 var _ = Suite(&ClientTest{})
 
 func (s *ClientTest) TestNewClient(c *C) {
-	dc, err := NewClient()
+	dc, err := NewClient(context.Background())
 	defer dc.docker.Close() // nolint: errcheck
 	c.Assert(err, IsNil)
 
@@ -27,12 +27,12 @@ func (s *ClientTest) TestNewClient(c *C) {
 	}
 
 	c.Assert(os.Setenv("DOCKER_HOST", "/////"), IsNil)
-	_, err = NewClient()
+	_, err = NewClient(context.Background())
 	c.Assert(err, ErrorMatches, "unable to parse docker host `/////`")
 }
 
 func (s *ClientTest) TestRunAndRemoveContainer(c *C) {
-	dc, err := NewClient()
+	dc, err := NewClient(context.Background())
 	defer dc.docker.Close() // nolint: errcheck
 	c.Assert(err, IsNil)
 	input := NewClientInput(testImage)
@@ -44,7 +44,7 @@ func (s *ClientTest) TestRunAndRemoveContainer(c *C) {
 }
 
 func (s *ClientTest) TestRunContainerAttemptsToRetrieveImage(c *C) {
-	dc, err := NewClient()
+	dc, err := NewClient(context.Background())
 	c.Assert(err, IsNil)
 
 	// Some random image so it will force the client to try to pull the
@@ -56,7 +56,7 @@ func (s *ClientTest) TestRunContainerAttemptsToRetrieveImage(c *C) {
 }
 
 func (s *ClientTest) TestRemoveContainer(c *C) {
-	dc, err := NewClient()
+	dc, err := NewClient(context.Background())
 	defer dc.docker.Close() // nolint: errcheck
 	c.Assert(err, IsNil)
 	input := NewClientInput(testImage)
@@ -67,7 +67,7 @@ func (s *ClientTest) TestRemoveContainer(c *C) {
 }
 
 func (s *ClientTest) TestListContainers(c *C) {
-	dc, err := NewClient()
+	dc, err := NewClient(context.Background())
 	c.Assert(err, IsNil)
 	defer dc.docker.Close() // nolint: errcheck
 
@@ -97,7 +97,7 @@ func (s *ClientTest) TestListContainers(c *C) {
 }
 
 func (s *ClientTest) TestService(c *C) {
-	dc, err := NewClient()
+	dc, err := NewClient(context.Background())
 	c.Assert(err, IsNil)
 	defer dc.docker.Close() // nolint: errcheck
 	input := NewClientInput(testImage)

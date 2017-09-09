@@ -28,22 +28,23 @@ var (
 // abstracted. Use NewClient() to construct and produce this struct.
 type DockerClient struct {
 	docker *client.Client
+	ctx    context.Context
 }
 
 // NewClient produces a *DockerClient struct.
-func NewClient() (*DockerClient, error) {
+func NewClient(ctx context.Context) (*DockerClient, error) {
 	docker, err := client.NewEnvClient()
-	return &DockerClient{docker: docker}, err
+	return &DockerClient{docker: docker, ctx: ctx}, err
 }
 
 // ContainerInfo retrieves a single container by id and returns a
 // *ContainerInfo struct.
-func (d *DockerClient) ContainerInfo(ctx context.Context, id string) (*ContainerInfo, error) {
+func (d *DockerClient) ContainerInfo(id string) (*ContainerInfo, error) {
 	args := filters.NewArgs()
 	args.Add("id", id)
 
 	options := types.ContainerListOptions{Filters: args, All: true}
-	containers, err := d.docker.ContainerList(ctx, options)
+	containers, err := d.docker.ContainerList(d.ctx, options)
 	if err != nil {
 		return nil, err
 	}
@@ -52,7 +53,7 @@ func (d *DockerClient) ContainerInfo(ctx context.Context, id string) (*Container
 		return nil, ErrContainerNotFound
 	}
 
-	inspection, err := d.docker.ContainerInspect(ctx, id)
+	inspection, err := d.docker.ContainerInspect(d.ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -86,7 +87,7 @@ func (d *DockerClient) ListContainers(ctx context.Context, input *ClientInput) (
 
 	for _, entry := range containers {
 		go func(c types.Container) {
-			info, err := d.ContainerInfo(ctx, c.ID)
+			info, err := d.ContainerInfo(c.ID)
 			if err != nil {
 				errs <- err
 				return
@@ -164,12 +165,12 @@ creation:
 
 	}
 
-	err = d.docker.ContainerStart(ctx, created.ID, types.ContainerStartOptions{})
+	err = d.docker.ContainerStart(d.ctx, created.ID, types.ContainerStartOptions{})
 	if err != nil {
 		return nil, err
 	}
 
-	info, err := d.ContainerInfo(ctx, created.ID)
+	info, err := d.ContainerInfo(created.ID)
 	info.Warnings = created.Warnings
 	return info, err
 }

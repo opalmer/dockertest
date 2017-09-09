@@ -14,10 +14,13 @@ to be used to ease testing. Documentation is available via godoc:
 Create a container and retrieve an exposed port.
 
 ```go
-import "github.com/opalmer/dockertest"
+import (
+	"context"
+	"github.com/opalmer/dockertest"
+)
 
 func main() {
-	client, err := dockertest.NewClient()
+	client, err := dockertest.NewClient(context.Background())
 	input := dockertest.NewClientInput("nginx:mainline-alpine")
 	input.Ports.Add(&dockertest.Port{
 		Private: 80,
@@ -33,12 +36,12 @@ Create a container using the `Service` struct.
 
 ```go
 import (
-	"net"
+	"context"
 	"github.com/opalmer/dockertest"
 )
 
 func main() {
-	client, _ := dockertest.NewClient()
+	client, _ := dockertest.NewClient(context.Background())
 	input := NewClientInput("nginx:mainline-alpine")
 	input.Ports.Add(&dockertest.Port{
 		Private: 80,
