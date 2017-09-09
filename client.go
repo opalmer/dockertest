@@ -75,32 +75,32 @@ func (d *DockerClient) ListContainers(input *ClientInput) ([]*ContainerInfo, err
 		Filters: input.FilterArgs(),
 	}
 
-	containers, err := d.docker.ContainerList(d.ctx, options)
+	listed, err := d.docker.ContainerList(d.ctx, options)
 	if err != nil {
 		return nil, err
 	}
 
-	infos := make(chan *ContainerInfo)
+	containers := make(chan *ContainerInfo)
 	errs := make(chan error)
 
-	for _, entry := range containers {
+	for _, entry := range listed {
 		go func(c types.Container) {
 			info, err := d.ContainerInfo(c.ID)
 			if err != nil {
 				errs <- err
 				return
 			}
-			infos <- info
+			containers <- info
 		}(entry)
 	}
 
 	results := []*ContainerInfo{}
 	errout := errset.ErrSet{}
-	for i := 0; i < len(containers); i++ {
+	for i := 0; i < len(listed); i++ {
 		select {
 		case err := <-errs:
 			errout = append(errout, err)
-		case info := <-infos:
+		case info := <-containers:
 			results = append(results, info)
 		}
 	}
