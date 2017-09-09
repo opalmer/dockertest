@@ -15,8 +15,6 @@ import (
 	"github.com/docker/docker/client"
 )
 
-// client.go provides a high level client for interacting with Docker
-
 var (
 	// ErrContainerNotFound is returned by GetContainer if we were
 	// unable to find the requested container.
@@ -69,7 +67,7 @@ func (d *DockerClient) ContainerInfo(id string) (*ContainerInfo, error) {
 
 // ListContainers will return a list of *ContainerInfo structs based on the
 // provided input.
-func (d *DockerClient) ListContainers(ctx context.Context, input *ClientInput) ([]*ContainerInfo, error) {
+func (d *DockerClient) ListContainers(input *ClientInput) ([]*ContainerInfo, error) {
 	options := types.ContainerListOptions{
 		All:     input.All,
 		Since:   input.Since,
@@ -77,7 +75,7 @@ func (d *DockerClient) ListContainers(ctx context.Context, input *ClientInput) (
 		Filters: input.FilterArgs(),
 	}
 
-	containers, err := d.docker.ContainerList(ctx, options)
+	containers, err := d.docker.ContainerList(d.ctx, options)
 	if err != nil {
 		return nil, err
 	}
@@ -112,15 +110,14 @@ func (d *DockerClient) ListContainers(ctx context.Context, input *ClientInput) (
 
 // RemoveContainer will delete the requested Container, force terminating
 // it if necessary.
-func (d *DockerClient) RemoveContainer(ctx context.Context, id string) error {
-	err := d.docker.ContainerRemove(ctx, id, types.ContainerRemoveOptions{Force: true})
+func (d *DockerClient) RemoveContainer(id string) error {
+	err := d.docker.ContainerRemove(d.ctx, id, types.ContainerRemoveOptions{Force: true})
 
 	// Docker's API does not expose their error structs and their
 	// IsErrNotFound does not seem to work.
 	if err != nil && strings.Contains(err.Error(), "No such container") {
 		return nil
 	}
-
 	return err
 }
 
@@ -132,55 +129,54 @@ func (d *DockerClient) RemoveContainer(ctx context.Context, id string) error {
 //    c := client.RunContainer("testimage", "testing", nil)
 //    port, err := c.Port(80)
 //    port.External
-func (d *DockerClient) RunContainer(ctx context.Context, input *ClientInput) (*ContainerInfo, error) {
+func (d *DockerClient) RunContainer(input *ClientInput) (*ContainerInfo, error) {
 	bindings, err := input.Ports.Bindings()
 	if err != nil {
 		return nil, err
 	}
+	ctx, cancel := context.WithTimeout(d.ctx, DefaultServiceTimeout)
+	defer cancel()
 
-	var created container.ContainerCreateCreatedBody
-	hostconfig := &container.HostConfig{}
-	hostconfig.PortBindings = bindings
+	if input.Timeout.Nanoseconds() > 0 {
+		cancel()
+		ctx, cancel = context.WithTimeout(d.ctx, input.Timeout)
+	}
 
-creation:
 	for {
-		created, err = d.docker.ContainerCreate(
+		created, err := d.docker.ContainerCreate(
 			ctx,
 			input.ContainerConfig(),
-			hostconfig, &network.NetworkingConfig{}, "")
-		switch {
-		case client.IsErrNotFound(err):
-			reader, err := d.docker.ImagePull(context.Background(), input.Image, types.ImagePullOptions{})
+			&container.HostConfig{PortBindings: bindings}, &network.NetworkingConfig{}, "")
+		if client.IsErrNotFound(err) {
+			reader, err := d.docker.ImagePull(ctx, input.Image, types.ImagePullOptions{})
 			if err != nil {
 				return nil, err
 			}
 			if _, err := io.Copy(ioutil.Discard, reader); err != nil {
 				return nil, err
 			}
-		case err != nil:
-			return nil, err
-		case err == nil:
-			break creation
+			continue
 		}
-
+		if err != nil {
+			return nil, err
+		}
+		if err := d.docker.ContainerStart(ctx, created.ID, types.ContainerStartOptions{}); err != nil {
+			return nil, err
+		}
+		info, err := d.ContainerInfo(created.ID)
+		info.Warnings = created.Warnings
+		return info, err
 	}
-
-	err = d.docker.ContainerStart(d.ctx, created.ID, types.ContainerStartOptions{})
-	if err != nil {
-		return nil, err
-	}
-
-	info, err := d.ContainerInfo(created.ID)
-	info.Warnings = created.Warnings
-	return info, err
 }
 
 // Service will return a *Service struct that may be used to spin up
 // a specific service. See the documentation present on the Service struct
 // for more information.
 func (d *DockerClient) Service(input *ClientInput) *Service {
-	return &Service{
-		Input:  input,
-		Client: d,
+	timeout := input.Timeout
+	if timeout.Nanoseconds() == 0 {
+		timeout = DefaultServiceTimeout
 	}
+	ctx, _ := context.WithTimeout(d.ctx, timeout)
+	return &Service{Context: ctx, Input: input, Client: d}
 }

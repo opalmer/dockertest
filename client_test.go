@@ -37,10 +37,10 @@ func (s *ClientTest) TestRunAndRemoveContainer(c *C) {
 	c.Assert(err, IsNil)
 	input := NewClientInput(testImage)
 
-	info, err := dc.RunContainer(context.Background(), input)
+	info, err := dc.RunContainer(input)
 	c.Assert(err, IsNil)
 	c.Assert(info.Refresh(), IsNil)
-	c.Assert(dc.RemoveContainer(context.Background(), info.Data.ID), IsNil)
+	c.Assert(dc.RemoveContainer(info.Data.ID), IsNil)
 }
 
 func (s *ClientTest) TestRunContainerAttemptsToRetrieveImage(c *C) {
@@ -50,7 +50,7 @@ func (s *ClientTest) TestRunContainerAttemptsToRetrieveImage(c *C) {
 	// Some random image so it will force the client to try to pull the
 	// image down.
 	input := NewClientInput("abcdefgzyn")
-	_, err = dc.RunContainer(context.Background(), input)
+	_, err = dc.RunContainer(input)
 	c.Assert(err, NotNil)
 	c.Assert(strings.Contains(err.Error(), "does not exist"), Equals, true)
 }
@@ -60,10 +60,10 @@ func (s *ClientTest) TestRemoveContainer(c *C) {
 	defer dc.docker.Close() // nolint: errcheck
 	c.Assert(err, IsNil)
 	input := NewClientInput(testImage)
-	info, err := dc.RunContainer(context.Background(), input)
+	info, err := dc.RunContainer(input)
 	c.Assert(err, IsNil)
-	c.Assert(dc.RemoveContainer(context.Background(), info.Data.ID), IsNil)
-	c.Assert(dc.RemoveContainer(context.Background(), info.Data.ID), IsNil)
+	c.Assert(dc.RemoveContainer(info.Data.ID), IsNil)
+	c.Assert(dc.RemoveContainer(info.Data.ID), IsNil)
 }
 
 func (s *ClientTest) TestListContainers(c *C) {
@@ -76,7 +76,7 @@ func (s *ClientTest) TestListContainers(c *C) {
 	for i := 0; i < 4; i++ {
 		input := NewClientInput(testImage)
 		input.SetLabel("time", label)
-		info, err := dc.RunContainer(context.Background(), input)
+		info, err := dc.RunContainer(input)
 		c.Assert(err, IsNil)
 		infos[info.Data.ID] = info
 	}
@@ -84,7 +84,7 @@ func (s *ClientTest) TestListContainers(c *C) {
 	input := NewClientInput(testImage)
 	input.SetLabel("time", label)
 
-	containers, err := dc.ListContainers(context.Background(), input)
+	containers, err := dc.ListContainers(input)
 	c.Assert(err, IsNil)
 	for _, entry := range containers {
 		_, ok := infos[entry.Data.ID]
@@ -92,7 +92,7 @@ func (s *ClientTest) TestListContainers(c *C) {
 	}
 
 	for key := range infos {
-		c.Assert(dc.RemoveContainer(context.Background(), key), IsNil)
+		c.Assert(dc.RemoveContainer(key), IsNil)
 	}
 }
 

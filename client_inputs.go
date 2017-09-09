@@ -14,6 +14,7 @@ type ClientInput struct {
 	Ports       *Ports
 	Labels      map[string]string
 	Environment []string
+	Timeout     time.Duration
 
 	// Fields provided for the purposes of filtering containers.
 	Since     string

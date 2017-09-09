@@ -38,6 +38,8 @@ type Ping func(*PingInput) error
 // Service is a struct used to run and manage a Container for a specific
 // service.
 type Service struct {
+	Context context.Context
+
 	// Name is an optional name that may be used for tracking a service. This
 	// field is not used by dockertest.
 	Name string
@@ -64,23 +66,13 @@ type Service struct {
 	Container *ContainerInfo
 }
 
-func (s *Service) timeout() time.Duration {
-	if s.Timeout.Nanoseconds() != 0 {
-		return s.Timeout
-	}
-	return DefaultServiceTimeout
-}
-
 // Run will run the Container.
 func (s *Service) Run() error {
 	if s.Input == nil {
 		return ErrInputNotProvided
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), s.timeout())
-	defer cancel()
-
-	info, err := s.Client.RunContainer(ctx, s.Input)
+	info, err := s.Client.RunContainer(s.Input)
 	if err != nil {
 		return err
 	}
@@ -107,8 +99,5 @@ func (s *Service) Terminate() error {
 	if s.Container == nil {
 		return ErrContainerNotStarted
 	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), s.timeout())
-	defer cancel()
-	return s.Client.RemoveContainer(ctx, s.Container.ID())
+	return s.Client.RemoveContainer(s.Container.ID())
 }

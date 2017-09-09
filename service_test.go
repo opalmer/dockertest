@@ -1,29 +1,17 @@
 package dockertest
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"net"
-	"time"
 
-	"context"
-
-	"github.com/pkg/errors"
 	. "gopkg.in/check.v1"
 )
 
 type ServiceTest struct{}
 
 var _ = Suite(&ServiceTest{})
-
-func (*ServiceTest) TestTimeout(c *C) {
-	s := &Service{}
-	c.Assert(s.timeout().Nanoseconds(), Equals,
-		DefaultServiceTimeout.Nanoseconds())
-	s.Timeout = time.Second * 5
-	c.Assert(
-		s.Timeout.Nanoseconds(), Equals,
-		(time.Second * 5).Nanoseconds())
-}
 
 func (*ServiceTest) TestNoInput(c *C) {
 	s := &Service{}
@@ -66,8 +54,8 @@ func (*ServiceTest) TestErrorOnPingCallsTerminate(c *C) {
 	input := NewClientInput(testImage)
 	svc := dc.Service(input)
 	svc.Ping = func(input *PingInput) error {
-		return errors.New("Some error")
+		return errors.New("some error")
 	}
-	c.Assert(svc.Run(), ErrorMatches, "Some error")
+	c.Assert(svc.Run(), ErrorMatches, "some error")
 	c.Assert(svc.Terminate(), IsNil)
 }
