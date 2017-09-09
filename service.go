@@ -1,7 +1,6 @@
 package dockertest
 
 import (
-	"context"
 	"errors"
 	"time"
 
@@ -38,8 +37,6 @@ type Ping func(*PingInput) error
 // Service is a struct used to run and manage a Container for a specific
 // service.
 type Service struct {
-	Context context.Context
-
 	// Name is an optional name that may be used for tracking a service. This
 	// field is not used by dockertest.
 	Name string

@@ -66,10 +66,7 @@ func (d *DockerClient) ListContainers(input *ClientInput) ([]*ContainerInfo, err
 		Filters: input.FilterArgs(),
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), input.GetTimeout())
-	defer cancel()
-
-	listed, err := d.docker.ContainerList(ctx, options)
+	listed, err := d.docker.ContainerList(context.Background(), options)
 	if err != nil {
 		return nil, err
 	}
@@ -129,16 +126,13 @@ func (d *DockerClient) RunContainer(input *ClientInput) (*ContainerInfo, error) 
 		return nil, err
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), input.GetTimeout())
-	defer cancel()
-
 	for {
 		created, err := d.docker.ContainerCreate(
-			ctx,
+			context.Background(),
 			input.ContainerConfig(),
 			&container.HostConfig{PortBindings: bindings}, &network.NetworkingConfig{}, "")
 		if client.IsErrNotFound(err) {
-			reader, err := d.docker.ImagePull(ctx, input.Image, types.ImagePullOptions{})
+			reader, err := d.docker.ImagePull(context.Background(), input.Image, types.ImagePullOptions{})
 			if err != nil {
 				return nil, err
 			}
@@ -148,7 +142,7 @@ func (d *DockerClient) RunContainer(input *ClientInput) (*ContainerInfo, error) 
 		if err != nil {
 			return nil, err
 		}
-		if err := d.docker.ContainerStart(ctx, created.ID, types.ContainerStartOptions{}); err != nil {
+		if err := d.docker.ContainerStart(context.Background(), created.ID, types.ContainerStartOptions{}); err != nil {
 			return nil, err
 		}
 		info, err := d.ContainerInfo(created.ID)
@@ -161,9 +155,7 @@ func (d *DockerClient) RunContainer(input *ClientInput) (*ContainerInfo, error) 
 // a specific service. See the documentation present on the Service struct
 // for more information.
 func (d *DockerClient) Service(input *ClientInput) *Service {
-	return &Service{
-		Context: context.Background(),
-		Input:   input, Client: d}
+	return &Service{Input: input, Client: d}
 }
 
 // NewClient produces a *DockerClient struct.
