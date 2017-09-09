@@ -153,7 +153,9 @@ creation:
 			if err != nil {
 				return nil, err
 			}
-			io.Copy(ioutil.Discard, reader)
+			if _, err := io.Copy(ioutil.Discard, reader); err != nil {
+				return nil, err
+			}
 		case err != nil:
 			return nil, err
 		case err == nil:

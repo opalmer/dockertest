@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"time"
+
+	"github.com/crewjam/errset"
 )
 
 const (
@@ -90,8 +92,10 @@ func (s *Service) Run() error {
 			Container: info,
 		}
 		if err := s.Ping(input); err != nil {
-			s.Terminate()
-			return err
+			errs := errset.ErrSet{}
+			errs = append(errs, err)
+			errs = append(errs, s.Terminate())
+			return errs.ReturnValue()
 		}
 	}
 
