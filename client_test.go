@@ -16,7 +16,7 @@ var _ = Suite(&ClientTest{})
 
 func (s *ClientTest) TestNewClient(c *C) {
 	dc, err := NewClient()
-	defer dc.Client.Close()
+	defer dc.docker.Close()
 	c.Assert(err, IsNil)
 
 	dockerhost := os.Getenv("DOCKER_HOST")
@@ -33,7 +33,7 @@ func (s *ClientTest) TestNewClient(c *C) {
 
 func (s *ClientTest) TestRunAndRemoveContainer(c *C) {
 	dc, err := NewClient()
-	defer dc.Client.Close()
+	defer dc.docker.Close()
 	c.Assert(err, IsNil)
 	input := NewClientInput(testImage)
 
@@ -57,7 +57,7 @@ func (s *ClientTest) TestRunContainerAttemptsToRetrieveImage(c *C) {
 
 func (s *ClientTest) TestRemoveContainer(c *C) {
 	dc, err := NewClient()
-	defer dc.Client.Close()
+	defer dc.docker.Close()
 	c.Assert(err, IsNil)
 	input := NewClientInput(testImage)
 	info, err := dc.RunContainer(context.Background(), input)
@@ -69,7 +69,7 @@ func (s *ClientTest) TestRemoveContainer(c *C) {
 func (s *ClientTest) TestListContainers(c *C) {
 	dc, err := NewClient()
 	c.Assert(err, IsNil)
-	defer dc.Client.Close()
+	defer dc.docker.Close()
 
 	label := fmt.Sprintf("%d", time.Now().Nanosecond())
 	infos := map[string]*ContainerInfo{}
@@ -97,7 +97,7 @@ func (s *ClientTest) TestListContainers(c *C) {
 func (s *ClientTest) TestService(c *C) {
 	dc, err := NewClient()
 	c.Assert(err, IsNil)
-	defer dc.Client.Close()
+	defer dc.docker.Close()
 	input := NewClientInput(testImage)
 	svc := dc.Service(input)
 	c.Assert(svc.Input, DeepEquals, input)
