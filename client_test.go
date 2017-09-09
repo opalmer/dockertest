@@ -27,15 +27,7 @@ func (s *ClientTest) addCleanup(f func() error) {
 }
 
 func (s *ClientTest) newClient(c *C) *DockerClient {
-	ctx, cancel := context.WithTimeout(
-		context.Background(), DefaultServiceTimeout)
-	s.addCleanup(func() error {
-		cancel()
-		return nil
-	})
-
-	dc, err := NewClient(ctx)
-	s.addCleanup(dc.docker.Close)
+	dc, err := NewClient(context.Background())
 	c.Assert(err, IsNil)
 	return dc
 }
