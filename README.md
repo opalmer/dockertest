@@ -16,19 +16,41 @@ Create a container and retrieve an exposed port.
 ```go
 import (
 	"context"
+	"log"
 	"github.com/opalmer/dockertest"
 )
 
 func main() {
-	client, err := dockertest.NewClient(context.Background())
-	input := dockertest.NewClientInput("nginx:mainline-alpine")
-	input.Ports.Add(&dockertest.Port{
-		Private: 80,
-		Public: dockertest.RandomPort,
-		Protocol: dockertest.ProtocolTCP,
+	client, err := NewClient(context.Background())
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Construct information about the container to start.
+	input := NewClientInput("nginx:mainline-alpine")
+	input.Ports.Add(&Port{
+		Private:  80,
+		Public:   RandomPort,
+		Protocol: ProtocolTCP,
 	})
+
+	// Start the container
+	container, err := client.RunContainer(input)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Extract information about the started container.
 	port, err := container.Port(80)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	fmt.Println(port.Public, port.Address)
+
+	if err := client.RemoveContainer(container.ID()); err != nil {
+		log.Fatal(err)
+	}
 }
 ```
 
@@ -37,19 +59,25 @@ Create a container using the `Service` struct.
 ```go
 import (
 	"context"
+	"log"
 	"github.com/opalmer/dockertest"
 )
 
 func main() {
-	client, _ := dockertest.NewClient(context.Background())
+	client, _ := NewClient(context.Background())
+
+	// Construct information about the container to start.
 	input := NewClientInput("nginx:mainline-alpine")
-	input.Ports.Add(&dockertest.Port{
-		Private: 80,
-		Public: dockertest.RandomPort,
-		Protocol: dockertest.ProtocolTCP,
+	input.Ports.Add(&Port{
+		Private:  80,
+		Public:   RandomPort,
+		Protocol: ProtocolTCP,
 	})
+
+	// Construct the service and tell it how to handle waiting
+	// for the container to start.
 	service := client.Service(input)
-	service.Ping = func(input *dockertest.PingInput) error {
+	service.Ping = func(input *PingInput) error {
 		port, err := input.Container.Port(80)
 		if err != nil {
 			return err // Will cause Run() to call Terminate()
@@ -58,11 +86,31 @@ func main() {
 		for {
 			_, err := net.Dial(string(port.Protocol), fmt.Sprintf("%s:%d", port.Address, port.Public))
 			if err != nil {
-				return nil
+				time.Sleep(time.Millisecond * 100)
+				continue
 			}
+			break
 		}
+
+		return nil
 	}
-	err := service.Run() // Will return when Ping() returns
-	defer service.Terminate()
+
+	// Starts the container, runs Ping() and waits for it to return. If Ping()
+	// fails the container will be terminated and Run() will return an error.
+	if err := service.Run(); err != nil {
+		log.Fatal(err)
+	}
+
+	// Container has started, get information information
+	// about the exposed port.
+	port, err := service.Container.Port(80)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(port.Public, port.Address)
+
+	if err := service.Terminate(); err != nil {
+		log.Fatal(err)
+	}
 }
 ```
