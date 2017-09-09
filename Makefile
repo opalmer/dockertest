@@ -14,10 +14,15 @@ check: deps vet lint test
 
 deps:
 	go get $(EXTRA_DEPENDENCIES)
+	gometalinter --install > /dev/null
 	dep ensure
 
 lint:
-	golint -set_exit_status $(PACKAGES)
+	gometalinter --vendor --disable-all --enable=deadcode --enable=errcheck --enable=goimports \
+	--enable=gocyclo --enable=golint --enable=gosimple --enable=misspell \
+	--enable=unconvert --enable=unused --enable=varcheck --enable=interfacer \
+	./...
+
 
 fmt:
 	gofmt -w -s $(SOURCES)
