@@ -23,7 +23,6 @@ lint:
 	--enable=unconvert --enable=unused --enable=varcheck --enable=interfacer \
 	./...
 
-
 fmt:
 	gofmt -w -s $(SOURCES)
 	goimports -w $(SOURCES)
