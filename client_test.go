@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	. "gopkg.in/check.v1"
-	"strings"
 )
 
 type ClientTest struct{}
@@ -52,7 +52,7 @@ func (s *ClientTest) TestRunContainerAttemptsToRetrieveImage(c *C) {
 	input := NewClientInput("abcdefgzyn")
 	_, err = dc.RunContainer(context.Background(), input)
 	c.Assert(err, NotNil)
-	c.Assert(strings.Contains(err.Error(), "does not exist"),  Equals, true)
+	c.Assert(strings.Contains(err.Error(), "does not exist"), Equals, true)
 }
 
 func (s *ClientTest) TestRemoveContainer(c *C) {
