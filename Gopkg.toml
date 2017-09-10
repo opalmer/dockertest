@@ -36,7 +36,7 @@ required = ["github.com/docker/distribution/reference"]
 
 [[constraint]]
   name = "github.com/docker/docker"
-  version = "17.5.0-ce-rc3"
+  revision = "13fec0607394f7c6da0148f8d513b6fcbf7cce61"
 
 [[constraint]]
   name = "github.com/docker/go-connections"
@@ -53,10 +53,6 @@ required = ["github.com/docker/distribution/reference"]
 [[constraint]]
   name = "github.com/opencontainers/go-digest"
   version = "1.0.0-rc0"
-
-[[constraint]]
-  name = "github.com/pkg/errors"
-  version = "0.8.0"
 
 [[constraint]]
   branch = "master"
