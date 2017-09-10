@@ -20,7 +20,11 @@
 #  name = "github.com/x/y"
 #  version = "2.4.0"
 
-required = ["github.com/docker/distribution/reference"]
+required = [
+  "github.com/docker/distribution/reference",
+  "github.com/opencontainers/runc",
+  "github.com/docker/go-connections"
+]
 
 [[constraint]]
   name = "github.com/Microsoft/go-winio"
@@ -40,7 +44,7 @@ required = ["github.com/docker/distribution/reference"]
 
 [[constraint]]
   name = "github.com/docker/go-connections"
-  version = "0.2.1"
+  version = "0.3.0"
 
 [[constraint]]
   name = "github.com/docker/go-units"
@@ -52,7 +56,7 @@ required = ["github.com/docker/distribution/reference"]
 
 [[constraint]]
   name = "github.com/opencontainers/go-digest"
-  version = "1.0.0-rc0"
+  version = "0.3.0"
 
 [[constraint]]
   branch = "master"
@@ -65,3 +69,7 @@ required = ["github.com/docker/distribution/reference"]
 [[constraint]]
   branch = "v1"
   name = "gopkg.in/check.v1"
+
+[[constraint]]
+  name = "github.com/opencontainers/runc"
+  version = "1.0.0-rc4"
