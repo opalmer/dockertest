@@ -27,10 +27,6 @@ required = ["github.com/docker/distribution/reference"]
   version = "0.4.5"
 
 [[constraint]]
-  name = "github.com/Sirupsen/logrus"
-  version = "1.0.2"
-
-[[constraint]]
   branch = "master"
   name = "github.com/crewjam/errset"
 
