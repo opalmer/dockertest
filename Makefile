@@ -7,7 +7,7 @@ PACKAGE_DIRS=$(shell go list -f '{{ .Dir }}' ./... | egrep -v /vendor/ | tail -n
 SOURCES = $(shell for f in $(PACKAGES); do ls $$GOPATH/src/$$f/*.go; done)
 EXTRA_DEPENDENCIES = \
     github.com/golang/lint/golint \
-    github.com/golang/dep/cmd/dep \
+    github.com/tools/godep \
     github.com/alecthomas/gometalinter
 
 check: deps vet lint test
@@ -15,7 +15,6 @@ check: deps vet lint test
 deps:
 	go get $(EXTRA_DEPENDENCIES)
 	gometalinter --install > /dev/null
-	dep ensure
 
 lint:
 	gometalinter --vendor --disable-all --enable=deadcode --enable=errcheck --enable=goimports \
