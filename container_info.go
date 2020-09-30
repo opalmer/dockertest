@@ -67,7 +67,7 @@ func (c *ContainerInfo) Refresh() error {
 
 // address makes its best effort to determine the ip for the given address,
 // port and protocol.
-func (c *ContainerInfo) address(ip string, port uint16, protocol Protocol) (string, error) {
+func (c *ContainerInfo) address(ip string) (string, error) {
 	if ip != "0.0.0.0" {
 		return ip, nil
 	}
@@ -103,7 +103,8 @@ func (c *ContainerInfo) Port(internal int) (*Port, error) {
 			if port.Type == "udp" {
 				protocol = ProtocolUDP
 			}
-			address, err := c.address(port.IP, port.PublicPort, protocol)
+
+			address, err := c.address(port.IP)
 			if err != nil {
 				return nil, err
 			}

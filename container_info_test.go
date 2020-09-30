@@ -136,7 +136,7 @@ func (s *ContainerInfoTest) TestAddressDockerURL(c *C) {
 	}
 	c.Assert(os.Setenv("DOCKER_URL", "tcp://1.2.3.4:80/"), IsNil)
 	info := &ContainerInfo{}
-	value, err := info.address("0.0.0.0", 0, ProtocolUDP)
+	value, err := info.address("0.0.0.0")
 	c.Assert(err, IsNil)
 	c.Assert(value, Equals, "1.2.3.4")
 }
@@ -150,7 +150,7 @@ func (s *ContainerInfoTest) TestAddressCannotParseDockerURL(c *C) {
 	}
 	c.Assert(os.Setenv("DOCKER_URL", "1.2.3.4:80/"), IsNil)
 	info := &ContainerInfo{}
-	value, err := info.address("0.0.0.0", 0, ProtocolUDP)
+	value, err := info.address("0.0.0.0")
 	c.Assert(err, NotNil)
 	c.Assert(err.Error(), Equals, `parse "1.2.3.4:80/": first path segment in URL cannot contain colon`)
 	c.Assert(value, Equals, "")
@@ -163,7 +163,7 @@ func (s *ContainerInfoTest) TestAddressIPAlreadySet(c *C) {
 	}
 	c.Assert(os.Unsetenv("DOCKER_URL"), IsNil)
 	info := &ContainerInfo{}
-	value, err := info.address("1.2.3.4", 0, ProtocolUDP)
+	value, err := info.address("1.2.3.4")
 	c.Assert(err, IsNil)
 	c.Assert(value, Equals, "1.2.3.4")
 }
@@ -175,7 +175,7 @@ func (s *ContainerInfoTest) TestAddressDefault(c *C) {
 	}
 	c.Assert(os.Unsetenv("DOCKER_URL"), IsNil)
 	info := &ContainerInfo{}
-	value, err := info.address("0.0.0.0", 0, ProtocolUDP)
+	value, err := info.address("0.0.0.0")
 	c.Assert(err, IsNil)
 	c.Assert(value, Equals, "127.0.0.1")
 }
