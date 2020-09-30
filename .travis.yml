@@ -2,8 +2,7 @@ language: go
 sudo: required
 
 go:
-    - 1.8
-    - 1.9
+    - 1.x
 
 services:
   - docker
@@ -13,6 +12,7 @@ before_install:
   - sudo apt-get -y -o Dpkg::Options::="--force-confnew" install docker-ce
 
 script:
+  - curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.31.0
   - make check
 
 after_success:
