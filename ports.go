@@ -45,7 +45,7 @@ type Port struct {
 // Port converts the struct into a nat.Port
 func (s *Port) Port() (nat.Port, error) {
 	if s.Protocol == "" {
-		return nat.Port(0), errors.New("Protocol not specified")
+		return "0", errors.New("Protocol not specified")
 	}
 	return nat.NewPort(
 		string(s.Protocol), fmt.Sprintf("%d", s.Private))
