@@ -28,7 +28,7 @@ var (
 	ErrContainerStillRunning = errors.New("container still running")
 )
 
-// ContainerInfo provides a wrapper around information
+// ContainerInfo provides a wrapper around information.
 type ContainerInfo struct {
 	JSON     types.ContainerJSON
 	Data     types.Container
@@ -67,7 +67,7 @@ func (c *ContainerInfo) Refresh() error {
 
 // address makes its best effort to determine the ip for the given address,
 // port and protocol.
-func (c *ContainerInfo) address(ip string, port uint16, protocol Protocol) (string, error) {
+func (c *ContainerInfo) address(ip string) (string, error) {
 	if ip != "0.0.0.0" {
 		return ip, nil
 	}
@@ -103,7 +103,8 @@ func (c *ContainerInfo) Port(internal int) (*Port, error) {
 			if port.Type == "udp" {
 				protocol = ProtocolUDP
 			}
-			address, err := c.address(port.IP, port.PublicPort, protocol)
+
+			address, err := c.address(port.IP)
 			if err != nil {
 				return nil, err
 			}
@@ -118,7 +119,7 @@ func (c *ContainerInfo) Port(internal int) (*Port, error) {
 	return nil, ErrPortNotFound
 }
 
-// ID is a shortcut function to return the Container's id
+// ID is a shortcut function to return the Container's id.
 func (c *ContainerInfo) ID() string {
 	return c.Data.ID
 }

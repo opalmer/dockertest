@@ -42,10 +42,10 @@ type Port struct {
 	Protocol Protocol `json:"protocol"`
 }
 
-// Port converts the struct into a nat.Port
+// Port converts the struct into a nat.Port.
 func (s *Port) Port() (nat.Port, error) {
 	if s.Protocol == "" {
-		return nat.Port(0), errors.New("Protocol not specified")
+		return "0", errors.New("Protocol not specified")
 	}
 	return nat.NewPort(
 		string(s.Protocol), fmt.Sprintf("%d", s.Private))
@@ -64,7 +64,7 @@ func (s *Port) Binding() nat.PortBinding {
 	}
 }
 
-// Ports is when to convey port exposures to RunContainer()
+// Ports is when to convey port exposures to RunContainer().
 type Ports struct {
 	// Specs is a map of internal to external ports. The external
 	// port may be the same as the internal port or it may be the

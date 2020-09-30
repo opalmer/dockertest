@@ -21,7 +21,7 @@ var (
 	ErrContainerNotFound = errors.New("failed to locate the Container")
 )
 
-// DockerClient provides a wrapper for the standard dc client
+// DockerClient provides a wrapper for the standard dc client.
 type DockerClient struct {
 	docker *client.Client
 }
