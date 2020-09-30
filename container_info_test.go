@@ -151,7 +151,8 @@ func (s *ContainerInfoTest) TestAddressCannotParseDockerURL(c *C) {
 	c.Assert(os.Setenv("DOCKER_URL", "1.2.3.4:80/"), IsNil)
 	info := &ContainerInfo{}
 	value, err := info.address("0.0.0.0", 0, ProtocolUDP)
-	c.Assert(err, ErrorMatches, "parse 1.2.3.4:80/: first path segment in URL cannot contain colon")
+	c.Assert(err, NotNil)
+	c.Assert(err.Error(), Equals, `parse "1.2.3.4:80/": first path segment in URL cannot contain colon`)
 	c.Assert(value, Equals, "")
 }
 
