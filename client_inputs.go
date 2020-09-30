@@ -28,7 +28,7 @@ func (i *ClientInput) SetLabel(key string, value string) {
 	i.Labels[key] = value
 }
 
-// RemoveLabel will remove the specified label
+// RemoveLabel will remove the specified label.
 func (i *ClientInput) RemoveLabel(key string) {
 	delete(i.Labels, key)
 }
@@ -43,7 +43,7 @@ func (i *ClientInput) ContainerConfig() *container.Config {
 	}
 }
 
-// AddEnvironmentVar adds an environment variable
+// AddEnvironmentVar adds an environment variable.
 func (i *ClientInput) AddEnvironmentVar(key string, value string) {
 	i.Environment = append(
 		i.Environment, fmt.Sprintf("%s=%s", key, value))

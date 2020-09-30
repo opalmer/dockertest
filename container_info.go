@@ -28,7 +28,7 @@ var (
 	ErrContainerStillRunning = errors.New("container still running")
 )
 
-// ContainerInfo provides a wrapper around information
+// ContainerInfo provides a wrapper around information.
 type ContainerInfo struct {
 	JSON     types.ContainerJSON
 	Data     types.Container
@@ -119,7 +119,7 @@ func (c *ContainerInfo) Port(internal int) (*Port, error) {
 	return nil, ErrPortNotFound
 }
 
-// ID is a shortcut function to return the Container's id
+// ID is a shortcut function to return the Container's id.
 func (c *ContainerInfo) ID() string {
 	return c.Data.ID
 }

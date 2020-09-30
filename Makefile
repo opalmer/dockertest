@@ -1,22 +1,11 @@
 PACKAGES = $(shell go list ./... )
 PACKAGE_DIRS = $(shell go list -f '{{ .Dir }}' ./...)
 SOURCES = $(shell for f in $(PACKAGES); do ls $(shell go env GOPATH)/src/$$f/*.go; done)
-EXTRA_DEPENDENCIES = \
-    github.com/golang/lint/golint \
-    github.com/tools/godep \
-    github.com/alecthomas/gometalinter
 
-check: deps vet lint test
-
-deps:
-	go get $(EXTRA_DEPENDENCIES)
-	gometalinter --install > /dev/null
+check: vet lint test
 
 lint:
-	gometalinter --vendor --disable-all --enable=deadcode --enable=errcheck --enable=goimports \
-	--enable=gocyclo --enable=golint --enable=gosimple --enable=misspell \
-	--enable=unconvert --enable=unused --enable=varcheck --enable=interfacer \
-	./...
+	golangci-lint run
 
 fmt:
 	go fmt ./...
@@ -27,3 +16,4 @@ vet:
 
 test:
 	go test -race -coverprofile=coverage.txt -covermode=atomic -check.v $(PACKAGES)
+	go test -short -v ./... -test.failfast -test.count 10  # Flake
